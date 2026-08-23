@@ -84,7 +84,6 @@ export function ThriveIntakeForm() {
           <Label htmlFor="recipe-text">Recipe text</Label>
           <Textarea
             id="recipe-text"
-            name="recipe-text"
             value={text}
             onChange={(event) => setText(event.target.value)}
             placeholder="Chicken fried steak&#10;&#10;Ingredients&#10;1 1/2 lb cube steak&#10;1 cup flour&#10;...&#10;&#10;Instructions&#10;Season, dredge, and fry until the crust is gold."
@@ -100,7 +99,6 @@ export function ThriveIntakeForm() {
           <Label htmlFor="recipe-url">Recipe URL</Label>
           <Input
             id="recipe-url"
-            name="recipe-url"
             type="url"
             inputMode="url"
             value={url}
