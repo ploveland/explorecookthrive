@@ -89,7 +89,7 @@ export function ConfirmRecipeForm({
       return;
     }
 
-    router.push(`/convert/ready/${draftId}`);
+    router.push(`/convert/goals/${draftId}`);
   }
 
   return (
@@ -197,7 +197,7 @@ export function ConfirmRecipeForm({
           disabled={pending}
           className="h-11 bg-terracotta-strong px-6 text-cream"
         >
-          {pending ? "Saving…" : "Looks right — continue"}
+          {pending ? "Saving…" : "Looks right — choose goals"}
         </Button>
         <Button type="button" variant="outline" onClick={() => router.push("/#thrive")}>
           Start over

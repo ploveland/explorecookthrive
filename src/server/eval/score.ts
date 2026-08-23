@@ -5,7 +5,7 @@ export const evalCaseSchema = z.object({
   id: z.string(),
   title: z.string(),
   goals: z.array(z.string()),
-  preference: z.enum(["preserve", "preserve", "balanced", "maximum"]),
+  preference: z.enum(["preserve", "balanced", "maximum"]),
   notes: z.string(),
   original: z.object({
     title: z.string(),

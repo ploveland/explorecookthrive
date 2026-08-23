@@ -8,9 +8,9 @@ Each JSON case in `evals/cases/` is a recipe people already love, plus culinary 
 - `mustNotSuggest` — default “diet” swaps that would flatten the dish
 - `allowedAdditions` — extras that can be justified (beans, a second flour, pasta water)
 
-`src/server/eval/score.ts` grades a structured Thrive output without calling a model. CI runs this on mocked conversions.
+`src/server/eval/score.ts` grades a structured Thrive output without calling a model. Unit tests run this against the local culinary mock so conversions that reach for applesauce, skim milk, or invented ingredients fail in CI.
 
-Later phases can add `npm run eval:live` to send fixtures through OpenAI. Live evals are opt-in and must never run in ordinary unit tests.
+A later `npm run eval:live` can send fixtures through OpenAI. Live evals are opt-in and must never run in ordinary unit tests.
 
 Scoring fails a conversion when it:
 
