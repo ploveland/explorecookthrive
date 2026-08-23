@@ -4,7 +4,9 @@ Keep the flavor. Improve the recipe.
 
 Explore Cook Thrive takes a recipe you already love — pasted or imported from a URL — and looks for nutrition upgrades that respect flavor, texture, and technique. It is not a generic “healthy recipe generator.”
 
-This repository is in **Phase 1**: branded app shell, PostgreSQL schema, taxonomy, OpenAI provider abstraction, and a culinary eval suite. Recipe extraction and conversion are next.
+This repository is in **Phase 2**: branded app shell plus paste/URL extraction, confirmation editing, and draft storage. AI conversion is next.
+
+Paste a recipe or a URL on the homepage. We structure it (JSON-LD first for URLs), then you confirm the reading before anything is rewritten.
 
 ## Run locally
 
