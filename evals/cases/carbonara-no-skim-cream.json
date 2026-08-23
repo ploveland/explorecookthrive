@@ -1,0 +1,23 @@
+{
+  "id": "carbonara-no-skim-cream",
+  "title": "Spaghetti carbonara",
+  "goals": ["lower_calories"],
+  "preference": "preserve",
+  "notes": "Egg yolk, pecorino, and rendered guanciale make the sauce. Skim milk or cream substitutes destroy it.",
+  "original": {
+    "title": "Spaghetti carbonara",
+    "ingredients": [
+      "12 ounces spaghetti",
+      "4 ounces guanciale",
+      "3 egg yolks",
+      "1 cup pecorino romano",
+      "black pepper"
+    ],
+    "instructions": [
+      "Render guanciale, toss with hot pasta, yolks, and cheese off heat."
+    ]
+  },
+  "mustPreserve": ["egg yolks", "pecorino", "guanciale"],
+  "mustNotSuggest": ["skim milk", "heavy cream substitute", "zucchini noodles", "turkey bacon"],
+  "allowedAdditions": ["pasta water"]
+}

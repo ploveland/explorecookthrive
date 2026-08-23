@@ -1,0 +1,384 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SourceType {
+  USER_CREATED
+  PASTED
+  IMPORTED_URL
+}
+
+enum Visibility {
+  PRIVATE
+  UNLISTED
+  PUBLIC
+}
+
+enum VersionKind {
+  ORIGINAL
+  THRIVE
+}
+
+enum ContentAudience {
+  PRIVATE
+  PUBLIC
+}
+
+enum TastePreference {
+  PRESERVE
+  BALANCED
+  MAXIMUM
+}
+
+enum TasteImpact {
+  MINIMAL
+  MODERATE
+  SIGNIFICANT
+}
+
+enum NutritionConfidence {
+  HIGH
+  MODERATE
+  LOW
+}
+
+enum TagType {
+  MEAL
+  CUISINE
+  NUTRITION_GOAL
+  COOKING_STYLE
+  DIETARY
+  COLLECTION_THEME
+}
+
+enum ConversionJobStatus {
+  QUEUED
+  READING
+  UNDERSTANDING
+  IMPROVING
+  ESTIMATING
+  PROTECTING
+  CREATING
+  COMPLETE
+  FAILED
+}
+
+enum NutritionGoal {
+  HEALTHIER_OVERALL
+  LOWER_CALORIES
+  HIGHER_PROTEIN
+  MORE_FIBER
+  LOWER_SATURATED_FAT
+  LOWER_SODIUM
+  LOWER_ADDED_SUGAR
+}
+
+enum DietaryRequirement {
+  VEGETARIAN
+  VEGAN
+  GLUTEN_FREE
+  DAIRY_FREE
+}
+
+/// Reserved for Auth.js after the conversion loop is proven.
+model User {
+  id        String   @id @default(cuid())
+  email     String?  @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  recipes   Recipe[]
+}
+
+model Recipe {
+  id              String             @id @default(cuid())
+  slug            String             @unique
+  ownerId         String?
+  owner           User?              @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  guestSessionId  String?
+  sourceType      SourceType
+  sourceUrl       String?
+  sourceSite      String?
+  sourceAuthor    String?
+  originalTitle   String?
+  visibility      Visibility         @default(PRIVATE)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  versions        RecipeVersion[]
+  conversions     Conversion[]
+  tags            RecipeTag[]
+  favorites       Favorite[]
+  collectionItems CollectionRecipe[]
+  ratings         Rating[]
+
+  @@index([ownerId])
+  @@index([guestSessionId])
+  @@index([visibility])
+}
+
+model RecipeDraft {
+  id               String     @id @default(cuid())
+  guestSessionId   String?
+  ownerId          String?
+  sourceType       SourceType
+  sourceUrl        String?
+  title            String?
+  description      String?
+  servings         Int?
+  prepMinutes      Int?
+  cookMinutes      Int?
+  cuisine          String?
+  category         String?
+  rawText          String?
+  ingredientsJson  Json
+  instructionsJson Json
+  extractionNotes  Json?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  @@index([guestSessionId])
+}
+
+model RecipeVersion {
+  id              String                @id @default(cuid())
+  recipeId        String
+  recipe          Recipe                @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  kind            VersionKind
+  audience        ContentAudience
+  title           String
+  description     String?
+  servings        Int
+  prepMinutes     Int?
+  cookMinutes     Int?
+  cuisine         String?
+  tastePreference TastePreference?
+  tasteImpact     TasteImpact?
+  goals           NutritionGoal[]
+  dietary         DietaryRequirement[]
+  searchText      String                @default("")
+  publishedAt     DateTime?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  conversionId    String?
+  conversion      Conversion?           @relation(fields: [conversionId], references: [id])
+  ingredients     RecipeIngredient[]
+  instructions    InstructionStep[]
+  nutrition       NutritionEstimate?
+  ratings         Rating[]
+
+  @@index([recipeId, kind])
+  @@index([audience, publishedAt])
+}
+
+model RecipeIngredient {
+  id                String        @id @default(cuid())
+  versionId         String
+  version           RecipeVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  position          Int
+  name              String
+  quantity          Float?
+  unit              String?
+  preparation       String?
+  rawText           String
+  assumptionNote    String?
+  fdcId             Int?
+  mappingConfidence Float?
+  grams             Float?
+
+  @@index([versionId])
+  @@index([fdcId])
+}
+
+model InstructionStep {
+  id        String        @id @default(cuid())
+  versionId String
+  version   RecipeVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  position  Int
+  text      String
+
+  @@index([versionId])
+}
+
+model NutritionEstimate {
+  id                      String               @id @default(cuid())
+  versionId               String               @unique
+  version                 RecipeVersion        @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  confidence              NutritionConfidence
+  assumptionSummary       String?
+  calories                Float?
+  proteinG                Float?
+  fatG                    Float?
+  saturatedFatG           Float?
+  carbsG                  Float?
+  fiberG                  Float?
+  sugarG                  Float?
+  sodiumMg                Float?
+  perServingCalories      Float?
+  perServingProteinG      Float?
+  perServingFatG          Float?
+  perServingSaturatedFatG Float?
+  perServingCarbsG        Float?
+  perServingFiberG        Float?
+  perServingSugarG        Float?
+  perServingSodiumMg      Float?
+  source                  String               @default("usda_fdc")
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+}
+
+model Conversion {
+  id            String                @id @default(cuid())
+  recipeId      String
+  recipe        Recipe                @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  goals         NutritionGoal[]
+  dietary       DietaryRequirement[]
+  preference    TastePreference       @default(BALANCED)
+  model         String
+  modelVersion  String?
+  promptVersion String?
+  inputTokens   Int?
+  outputTokens  Int?
+  latencyMs     Int?
+  createdAt     DateTime              @default(now())
+  changes       ConversionChange[]
+  job           ConversionJob?
+  versions      RecipeVersion[]
+}
+
+model ConversionChange {
+  id              String     @id @default(cuid())
+  conversionId    String
+  conversion      Conversion @relation(fields: [conversionId], references: [id], onDelete: Cascade)
+  position        Int
+  original        String
+  suggested       String
+  nutritionReason String
+  flavorEffect    String
+  textureEffect   String
+}
+
+model ConversionJob {
+  id           String               @id @default(cuid())
+  conversionId String?              @unique
+  conversion   Conversion?          @relation(fields: [conversionId], references: [id])
+  draftId      String?
+  status       ConversionJobStatus  @default(QUEUED)
+  errorCode    String?
+  errorMessage String?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+}
+
+model Tag {
+  id      String      @id @default(cuid())
+  slug    String      @unique
+  name    String
+  type    TagType
+  recipes RecipeTag[]
+}
+
+model RecipeTag {
+  recipeId String
+  tagId    String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  tag      Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([recipeId, tagId])
+  @@index([tagId])
+}
+
+model UrlExtractionCache {
+  id           String   @id @default(cuid())
+  canonicalUrl String   @unique
+  extractor    String
+  payload      Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model IngredientMapping {
+  id             String   @id @default(cuid())
+  normalizedName String   @unique
+  fdcId          Int
+  matchQuality   Float
+  dataType       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model FdcFoodCache {
+  fdcId       Int      @id
+  description String
+  dataType    String
+  nutrients   Json
+  portions    Json?
+  fetchedAt   DateTime @default(now())
+}
+
+/// Token and latency telemetry. Do not store full recipe text.
+model AiUsageEvent {
+  id           String   @id @default(cuid())
+  provider     String
+  model        String
+  operation    String
+  success      Boolean
+  inputTokens  Int?
+  outputTokens Int?
+  latencyMs    Int
+  errorCode    String?
+  createdAt    DateTime @default(now())
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  recipeId  String
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, recipeId])
+}
+
+model Collection {
+  id        String             @id @default(cuid())
+  userId    String
+  name      String
+  slug      String
+  createdAt DateTime           @default(now())
+  recipes   CollectionRecipe[]
+
+  @@unique([userId, slug])
+}
+
+model CollectionRecipe {
+  collectionId String
+  recipeId     String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  recipe       Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  addedAt      DateTime   @default(now())
+
+  @@id([collectionId, recipeId])
+}
+
+model Rating {
+  id             String         @id @default(cuid())
+  userId         String
+  recipeId       String
+  versionId      String?
+  recipe         Recipe         @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  version        RecipeVersion? @relation(fields: [versionId], references: [id], onDelete: SetNull)
+  taste          Int
+  texture        Int
+  similarity     Int
+  ease           Int
+  wouldMakeAgain Boolean
+  comment        String?
+  createdAt      DateTime       @default(now())
+
+  @@unique([userId, recipeId])
+}

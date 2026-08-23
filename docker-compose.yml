@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ect
+      POSTGRES_PASSWORD: ect
+      POSTGRES_DB: explore_cook_thrive
+    ports:
+      - "5433:5432"
+    volumes:
+      - explore_cook_thrive_pg:/var/lib/postgresql/data
+
+volumes:
+  explore_cook_thrive_pg:

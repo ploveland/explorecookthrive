@@ -1,0 +1,22 @@
+{
+  "id": "chili-no-invented-ingredients",
+  "title": "Weeknight beef chili",
+  "goals": ["higher_protein", "more_fiber"],
+  "preference": "balanced",
+  "notes": "Beans or extra lean beef can be justified. Do not invent ingredients that were never in the pot.",
+  "original": {
+    "title": "Weeknight chili",
+    "ingredients": [
+      "1 pound ground beef",
+      "1 onion",
+      "2 cloves garlic",
+      "2 tablespoons chili powder",
+      "1 can crushed tomatoes",
+      "1 can kidney beans"
+    ],
+    "instructions": ["Brown beef and onion, add spices, tomatoes, and beans, simmer."]
+  },
+  "mustPreserve": ["chili powder", "beef"],
+  "mustNotSuggest": ["cauliflower rice", "liquid smoke candy"],
+  "allowedAdditions": ["pinto beans", "black beans", "bell pepper"]
+}

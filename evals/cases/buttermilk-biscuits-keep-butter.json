@@ -1,0 +1,24 @@
+{
+  "id": "buttermilk-biscuits-keep-butter",
+  "title": "Southern buttermilk biscuits",
+  "goals": ["healthier_overall"],
+  "preference": "balanced",
+  "notes": "Butter is the flavor, browning, and flaky structure. Do not replace it with applesauce or margarine by default.",
+  "original": {
+    "title": "Buttermilk biscuits",
+    "ingredients": [
+      "2 cups all-purpose flour",
+      "1 tablespoon baking powder",
+      "1 teaspoon kosher salt",
+      "8 tablespoons cold unsalted butter",
+      "3/4 cup buttermilk"
+    ],
+    "instructions": [
+      "Cut cold butter into flour.",
+      "Stir in buttermilk, fold, cut, and bake hot."
+    ]
+  },
+  "mustPreserve": ["butter"],
+  "mustNotSuggest": ["applesauce", "margarine", "cauliflower"],
+  "allowedAdditions": ["white whole wheat flour", "Greek yogurt"]
+}

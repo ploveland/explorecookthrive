@@ -1,0 +1,22 @@
+{
+  "id": "chocolate-layer-cake-no-applesauce",
+  "title": "Chocolate layer cake",
+  "goals": ["lower_added_sugar"],
+  "preference": "preserve",
+  "notes": "Sugar is structure and moisture in this cake. Reducing sugar slightly is allowed; replacing it with applesauce or sucralose is not the default.",
+  "original": {
+    "title": "Chocolate layer cake",
+    "ingredients": [
+      "2 cups sugar",
+      "1 3/4 cups all-purpose flour",
+      "3/4 cup cocoa powder",
+      "2 eggs",
+      "1 cup whole milk",
+      "1/2 cup vegetable oil"
+    ],
+    "instructions": ["Cream, mix, bake in two pans, frost."]
+  },
+  "mustPreserve": ["sugar", "cocoa"],
+  "mustNotSuggest": ["applesauce", "sucralose", "stevia", "zucchini"],
+  "allowedAdditions": ["espresso powder"]
+}

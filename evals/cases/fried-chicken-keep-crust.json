@@ -1,0 +1,24 @@
+{
+  "id": "fried-chicken-keep-crust",
+  "title": "Buttermilk fried chicken",
+  "goals": ["lower_calories", "lower_saturated_fat"],
+  "preference": "balanced",
+  "notes": "Crisp crust and seasoned flour are the point. Technique changes (oil temperature, draining) are in scope; swapping to baked cauliflower is not.",
+  "original": {
+    "title": "Buttermilk fried chicken",
+    "ingredients": [
+      "1 whole chicken, cut up",
+      "2 cups buttermilk",
+      "2 cups all-purpose flour",
+      "1 tablespoon paprika",
+      "2 cups vegetable oil"
+    ],
+    "instructions": [
+      "Soak chicken in buttermilk.",
+      "Dredge in seasoned flour and fry until the crust is deep gold."
+    ]
+  },
+  "mustPreserve": ["flour", "buttermilk"],
+  "mustNotSuggest": ["cauliflower", "air fryer only", "almond flour crust"],
+  "allowedAdditions": ["peanut oil", "thermometer"]
+}
