@@ -2,6 +2,7 @@ import { RecipeCard } from "@/components/recipe-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { listPublished } from "@/server/library/store";
+import { log } from "@/server/log";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,12 @@ export default async function SearchPage({
   const { q } = await searchParams;
   const query = q?.trim() ?? "";
   const recipes = query ? await listPublished({ query }) : [];
+  if (query) {
+    log.info("search.results", {
+      queryLength: query.length,
+      resultCount: recipes.length,
+    });
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-16 sm:px-6">

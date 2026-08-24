@@ -30,9 +30,15 @@ function confidenceCopy(confidence: NutritionConfidence) {
 }
 
 function deltaClass(key: keyof NutrientTotals, value: number, invert: boolean) {
-  if (Math.abs(value) < 0.05) return "text-teal/55";
+  if (Math.abs(value) < 0.05) return "text-teal/70";
   const improved = invert ? value < 0 : value > 0;
-  return improved ? "text-sage" : "text-terracotta";
+  return improved ? "text-teal" : "text-terracotta-strong";
+}
+
+function deltaTone(value: number, invert: boolean) {
+  if (Math.abs(value) < 0.05) return "same";
+  const improved = invert ? value < 0 : value > 0;
+  return improved ? "improved" : "not an improvement";
 }
 
 export function ConvertNutrition({ nutrition }: { nutrition: NutritionComparison }) {
@@ -90,8 +96,19 @@ export function ConvertNutrition({ nutrition }: { nutrition: NutritionComparison
                     {row.suffix}
                   </td>
                   <td className={`py-2.5 tabular-nums font-medium ${deltaClass(row.key, change, row.invert)}`}>
-                    {formatDelta(row.key, change)}
-                    {row.suffix}
+                    <span className="sr-only">
+                      {row.label} {formatDelta(row.key, change)}
+                      {row.suffix}, {deltaTone(change, row.invert)}
+                    </span>
+                    <span aria-hidden>
+                      {formatDelta(row.key, change)}
+                      {row.suffix}
+                      {Math.abs(change) >= 0.05 ? (
+                        <span className="ml-1 text-xs font-normal">
+                          {deltaTone(change, row.invert) === "improved" ? "better" : "not better"}
+                        </span>
+                      ) : null}
+                    </span>
                   </td>
                 </tr>
               );

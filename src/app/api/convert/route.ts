@@ -3,11 +3,17 @@ import { ZodError } from "zod";
 import { gateConversion } from "@/server/accounts/session";
 import { JobError, createJob, startJob } from "@/server/convert/jobs";
 import { convertRequestSchema } from "@/server/convert/schema";
+import { log } from "@/server/log";
 
 export async function POST(request: Request) {
   try {
     const gated = await gateConversion();
     if (!gated.gate.ok) {
+      log.warn("convert.rate_limited", {
+        code: gated.gate.code,
+        remaining: gated.remaining,
+        signedIn: Boolean(gated.userId),
+      });
       return NextResponse.json(
         { code: gated.gate.code, message: gated.gate.message },
         { status: 403 },
@@ -21,6 +27,11 @@ export async function POST(request: Request) {
       userId: gated.userId,
     });
     startJob(job.id);
+    log.info("convert.job_started", {
+      jobId: job.id,
+      signedIn: Boolean(gated.userId),
+      remaining: gated.remaining - 1,
+    });
     return NextResponse.json({ jobId: job.id, status: job.status });
   } catch (error) {
     if (error instanceof ZodError) {

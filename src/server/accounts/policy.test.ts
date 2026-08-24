@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AUTH_DAILY_LIMIT, GUEST_CONVERSION_LIMIT, conversionGate } from "./policy";
+import { AUTH_DAILY_LIMIT, GUEST_CONVERSION_LIMIT, conversionGate, remainingConversions } from "./policy";
 
 describe("conversionGate", () => {
   it("lets a guest convert twice", () => {
@@ -33,5 +33,23 @@ describe("conversionGate", () => {
     });
     expect(gate.ok).toBe(false);
     if (!gate.ok) expect(gate.code).toBe("daily_limit");
+  });
+});
+
+describe("remainingConversions", () => {
+  it("counts remaining guest conversions", () => {
+    expect(
+      remainingConversions({ userId: null, guestConversions: 1, userConversionsToday: 0 }),
+    ).toBe(1);
+  });
+
+  it("counts remaining signed-in conversions for the UTC day", () => {
+    expect(
+      remainingConversions({
+        userId: "user-1",
+        guestConversions: 99,
+        userConversionsToday: 3,
+      }),
+    ).toBe(7);
   });
 });

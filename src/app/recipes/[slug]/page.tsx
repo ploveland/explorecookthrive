@@ -10,7 +10,9 @@ import { VisibilityControl } from "@/components/visibility-control";
 import { listCollections } from "@/server/accounts/collections";
 import { isFavorite } from "@/server/accounts/favorites";
 import { currentAccount } from "@/server/accounts/session";
-import { getPublishedBySlug, getVisibleBySlug } from "@/server/library/store";
+import { getVisibleBySlug } from "@/server/library/store";
+import { recipeJsonLd, shouldIndexRecipe } from "@/server/seo/jsonld";
+import { siteUrl } from "@/server/seo/site";
 import { TAXONOMY_TAGS } from "@/server/taxonomy/tags";
 
 export const dynamic = "force-dynamic";
@@ -21,11 +23,23 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const recipe = await getPublishedBySlug(slug);
-  if (!recipe) return { title: "Recipe" };
+  const recipe = await getVisibleBySlug(slug, null);
+  if (!recipe) {
+    return { title: "Recipe", robots: { index: false, follow: false } };
+  }
+  const index = shouldIndexRecipe(recipe);
+  const url = `${siteUrl()}/recipes/${recipe.slug}`;
   return {
     title: recipe.title,
     description: recipe.description,
+    alternates: { canonical: url },
+    robots: index ? { index: true, follow: true } : { index: false, follow: false },
+    openGraph: {
+      title: recipe.title,
+      description: recipe.description,
+      url,
+      type: "article",
+    },
   };
 }
 
@@ -44,6 +58,12 @@ export default async function PublishedRecipePage({
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-12 sm:px-6">
+      {recipe.visibility === "public" ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(recipeJsonLd(recipe)) }}
+        />
+      ) : null}
       <p className="text-sm font-semibold tracking-[0.18em] text-terracotta uppercase">
         Thrive Version
       </p>

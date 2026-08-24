@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { auth } from "@/auth";
 import { assignJobOwner, listJobs } from "@/server/convert/jobs";
 import { GUEST_COOKIE } from "./constants";
-import { conversionGate, isSameUtcDay } from "./policy";
+import { conversionGate, isSameUtcDay, remainingConversions } from "./policy";
 
 export async function readGuestId(): Promise<string | null> {
   const jar = await cookies();
@@ -33,12 +33,15 @@ export async function gateConversion() {
     ? jobs.filter((job) => job.userId === account.userId && isSameUtcDay(job.createdAt)).length
     : 0;
 
+  const counts = {
+    userId: account.userId,
+    guestConversions: account.userId ? 0 : guestConversions,
+    userConversionsToday,
+  };
+
   return {
     ...account,
-    gate: conversionGate({
-      userId: account.userId,
-      guestConversions: account.userId ? 0 : guestConversions,
-      userConversionsToday,
-    }),
+    remaining: remainingConversions(counts),
+    gate: conversionGate(counts),
   };
 }

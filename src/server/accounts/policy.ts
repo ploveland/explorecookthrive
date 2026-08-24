@@ -31,6 +31,15 @@ export function conversionGate(input: {
   return { ok: true };
 }
 
+export function remainingConversions(input: {
+  userId: string | null;
+  guestConversions: number;
+  userConversionsToday: number;
+}) {
+  if (input.userId) return Math.max(0, AUTH_DAILY_LIMIT - input.userConversionsToday);
+  return Math.max(0, GUEST_CONVERSION_LIMIT - input.guestConversions);
+}
+
 export function isSameUtcDay(iso: string, now = new Date()) {
   return iso.slice(0, 10) === now.toISOString().slice(0, 10);
 }

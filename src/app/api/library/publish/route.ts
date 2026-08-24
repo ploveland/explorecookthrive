@@ -4,6 +4,7 @@ import { z, ZodError } from "zod";
 import { currentAccount } from "@/server/accounts/session";
 import { getJob } from "@/server/convert/jobs";
 import { LibraryError, getPublishedByJobId, publishFromJob } from "@/server/library/store";
+import { log } from "@/server/log";
 
 const bodySchema = z.object({
   jobId: z.string().min(1),
@@ -42,6 +43,11 @@ export async function POST(request: Request) {
     revalidatePath("/kitchen");
     revalidatePath(`/recipes/${recipe.slug}`);
     revalidatePath(`/convert/result/${job.id}`);
+    log.info("library.publish", {
+      slug: recipe.slug,
+      alreadyPublished: Boolean(existing),
+      visibility: recipe.visibility,
+    });
     return NextResponse.json({
       slug: recipe.slug,
       alreadyPublished: Boolean(existing),

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
+import { log } from "@/server/log";
 import { extractRecipe } from "@/server/recipes/extract";
 import { ExtractError } from "@/server/recipes/schema";
 
@@ -19,6 +20,7 @@ export async function POST(request: Request) {
       );
     }
     if (error instanceof ExtractError) {
+      log.warn("recipe.extract_failed", { code: error.code });
       const status =
         error.code === "blocked_url" || error.code === "invalid_url"
           ? 400
