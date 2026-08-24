@@ -80,6 +80,7 @@ export async function listPublished(filters?: {
   const query = filters?.query?.trim().toLowerCase() || null;
 
   return recipes.filter((recipe) => {
+    if (recipe.visibility !== "public") return false;
     if (tag && !recipe.tags.includes(tag)) return false;
     if (!query) return true;
     const haystack = [
@@ -97,7 +98,38 @@ export async function listPublished(filters?: {
   });
 }
 
-export async function publishFromJob(job: ConversionJob): Promise<PublishedRecipe> {
+export async function getVisibleBySlug(
+  slug: string,
+  viewerId?: string | null,
+): Promise<PublishedRecipe | null> {
+  const recipe = await getPublishedBySlug(slug);
+  if (!recipe) return null;
+  if (recipe.visibility === "public" || recipe.visibility === "unlisted") return recipe;
+  if (viewerId && recipe.ownerId === viewerId) return recipe;
+  return null;
+}
+
+export async function setRecipeVisibility(
+  slug: string,
+  ownerId: string,
+  visibility: PublishedRecipe["visibility"],
+): Promise<PublishedRecipe | null> {
+  const recipe = await getPublishedBySlug(slug);
+  if (!recipe || recipe.ownerId !== ownerId) return null;
+  const next = publishedRecipeSchema.parse({ ...recipe, visibility });
+  await writeFile(fileFor(next.id), JSON.stringify(next, null, 2), "utf8");
+  return next;
+}
+
+export async function listPublishedByOwner(ownerId: string): Promise<PublishedRecipe[]> {
+  const recipes = await readAll();
+  return recipes.filter((recipe) => recipe.ownerId === ownerId);
+}
+
+export async function publishFromJob(
+  job: ConversionJob,
+  owner?: { ownerId: string; ownerName: string } | null,
+): Promise<PublishedRecipe> {
   if (job.status !== "complete" || !job.output) {
     throw new LibraryError("job_not_ready", "Finish the conversion before publishing.");
   }
@@ -144,6 +176,9 @@ export async function publishFromJob(job: ConversionJob): Promise<PublishedRecip
     wouldNotChange: job.output.analysis.wouldNotChange,
     nutrition: job.nutrition,
     provider: job.provider,
+    ownerId: owner?.ownerId ?? null,
+    ownerName: owner?.ownerName ?? null,
+    visibility: "public",
     publishedAt: new Date().toISOString(),
   });
 

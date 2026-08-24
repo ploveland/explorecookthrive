@@ -34,9 +34,11 @@ function IngredientList({
 export function ConvertResult({
   job,
   publishedSlug,
+  signedIn = false,
 }: {
   job: ConversionJob & { output: ConversionOutput; recipe: ExtractedRecipe };
   publishedSlug?: string | null;
+  signedIn?: boolean;
 }) {
   const output = job.output;
 
@@ -138,7 +140,11 @@ export function ConvertResult({
         </section>
       ) : null}
 
-      <PublishThriveForm jobId={job.id} publishedSlug={publishedSlug ?? null} />
+      <PublishThriveForm
+        jobId={job.id}
+        publishedSlug={publishedSlug ?? null}
+        signedIn={signedIn}
+      />
 
       <p className="text-sm text-teal/70">
         Taste impact: {output.analysis.tasteImpact}.

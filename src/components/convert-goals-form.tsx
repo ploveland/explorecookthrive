@@ -60,8 +60,13 @@ export function ConvertGoalsForm({
       const payload = (await response.json().catch(() => null)) as {
         jobId?: string;
         message?: string;
+        code?: string;
       } | null;
       if (!response.ok || !payload?.jobId) {
+        if (response.status === 403 && payload?.code === "sign_in_required") {
+          router.push(`/signin?reason=limit&next=${encodeURIComponent(`/convert/goals/${draftId}`)}`);
+          return;
+        }
         setError(payload?.message ?? "We could not start that conversion.");
         return;
       }

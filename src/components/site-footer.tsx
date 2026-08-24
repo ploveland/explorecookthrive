@@ -19,8 +19,11 @@ export function SiteFooter() {
           <Link className="underline-offset-4 hover:underline" href="/recipes">
             Recipe library
           </Link>
-          <Link className="underline-offset-4 hover:underline" href="/search">
-            Search
+          <Link className="underline-offset-4 hover:underline" href="/kitchen">
+            Your kitchen
+          </Link>
+          <Link className="underline-offset-4 hover:underline" href="/signin">
+            Sign in
           </Link>
           <p className="text-cream/70">Nutrition figures will always be estimates.</p>
         </div>

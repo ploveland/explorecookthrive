@@ -166,6 +166,8 @@ export const conversionJobSchema = z.object({
   inputTokens: z.number().nullable(),
   outputTokens: z.number().nullable(),
   latencyMs: z.number().nullable(),
+  guestId: z.string().nullable().default(null),
+  userId: z.string().nullable().default(null),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

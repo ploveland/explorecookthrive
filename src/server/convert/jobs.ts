@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { getDraft } from "../drafts/store";
 import { log } from "../log";
@@ -64,11 +64,51 @@ export class JobError extends Error {
   }
 }
 
+export async function listJobs(): Promise<ConversionJob[]> {
+  try {
+    const names = await readdir(DIR);
+    const jobs = await Promise.all(
+      names
+        .filter((name) => name.endsWith(".json"))
+        .map(async (name) => {
+          const raw = await readFile(path.join(DIR, name), "utf8");
+          return conversionJobSchema.parse(JSON.parse(raw));
+        }),
+    );
+    return jobs.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  } catch {
+    return [];
+  }
+}
+
+export async function listJobsForAccount(input: {
+  userId?: string | null;
+  guestId?: string | null;
+}): Promise<ConversionJob[]> {
+  const jobs = await listJobs();
+  return jobs.filter((job) => {
+    if (input.userId && job.userId === input.userId) return true;
+    if (input.guestId && job.guestId === input.guestId) return true;
+    return false;
+  });
+}
+
+export async function assignJobOwner(input: { guestId: string; userId: string }) {
+  const jobs = await listJobs();
+  await Promise.all(
+    jobs
+      .filter((job) => job.guestId === input.guestId && !job.userId)
+      .map((job) => writeJob({ ...job, userId: input.userId })),
+  );
+}
+
 export async function createJob(input: {
   draftId: string;
   goals: NutritionGoalId[];
   preference: TastePreferenceId;
   dietary: DietaryRequirementId[];
+  guestId?: string | null;
+  userId?: string | null;
 }): Promise<ConversionJob> {
   const draft = await getDraft(input.draftId);
   if (!draft) {
@@ -96,6 +136,8 @@ export async function createJob(input: {
     inputTokens: null,
     outputTokens: null,
     latencyMs: null,
+    guestId: input.guestId ?? null,
+    userId: input.userId ?? null,
     createdAt: now,
     updatedAt: now,
   });

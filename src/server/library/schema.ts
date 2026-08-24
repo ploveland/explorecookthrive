@@ -37,6 +37,9 @@ export const publishedRecipeSchema = z.object({
   wouldNotChange: z.array(keepSchema),
   nutrition: nutritionComparisonSchema.nullable(),
   provider: z.enum(["openai", "mock"]),
+  ownerId: z.string().nullable().default(null),
+  ownerName: z.string().nullable().default(null),
+  visibility: z.enum(["public", "unlisted", "private"]).default("public"),
   publishedAt: z.string(),
 });
 

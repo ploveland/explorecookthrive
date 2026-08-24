@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z, ZodError } from "zod";
+import { currentAccount } from "@/server/accounts/session";
 import { getJob } from "@/server/convert/jobs";
 import { LibraryError, getPublishedByJobId, publishFromJob } from "@/server/library/store";
 
@@ -10,6 +11,16 @@ const bodySchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const account = await currentAccount();
+    if (!account.userId || !account.user) {
+      return NextResponse.json(
+        {
+          code: "sign_in_required",
+          message: "Sign in to publish a Thrive Version to the public library.",
+        },
+        { status: 401 },
+      );
+    }
     const body = bodySchema.parse(await request.json());
     const job = await getJob(body.jobId);
     if (!job) {
@@ -19,10 +30,16 @@ export async function POST(request: Request) {
       );
     }
     const existing = await getPublishedByJobId(job.id);
-    const recipe = existing ?? (await publishFromJob(job));
+    const recipe =
+      existing ??
+      (await publishFromJob(job, {
+        ownerId: account.user.id,
+        ownerName: account.user.name,
+      }));
     revalidatePath("/");
     revalidatePath("/recipes");
     revalidatePath("/search");
+    revalidatePath("/kitchen");
     revalidatePath(`/recipes/${recipe.slug}`);
     revalidatePath(`/convert/result/${job.id}`);
     return NextResponse.json({

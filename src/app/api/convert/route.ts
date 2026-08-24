@@ -1,13 +1,25 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
+import { gateConversion } from "@/server/accounts/session";
 import { JobError, createJob, startJob } from "@/server/convert/jobs";
 import { convertRequestSchema } from "@/server/convert/schema";
 
 export async function POST(request: Request) {
   try {
+    const gated = await gateConversion();
+    if (!gated.gate.ok) {
+      return NextResponse.json(
+        { code: gated.gate.code, message: gated.gate.message },
+        { status: 403 },
+      );
+    }
     const body = await request.json();
     const input = convertRequestSchema.parse(body);
-    const job = await createJob(input);
+    const job = await createJob({
+      ...input,
+      guestId: gated.guestId,
+      userId: gated.userId,
+    });
     startJob(job.id);
     return NextResponse.json({ jobId: job.id, status: job.status });
   } catch (error) {

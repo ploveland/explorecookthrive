@@ -5,7 +5,12 @@ import { ConvertNutrition } from "@/components/convert-nutrition";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DIETARY_COPY, GOAL_COPY, PREFERENCE_COPY } from "@/server/convert/schema";
-import { getPublishedBySlug } from "@/server/library/store";
+import { RecipeSaveBar } from "@/components/recipe-save-bar";
+import { VisibilityControl } from "@/components/visibility-control";
+import { listCollections } from "@/server/accounts/collections";
+import { isFavorite } from "@/server/accounts/favorites";
+import { currentAccount } from "@/server/accounts/session";
+import { getPublishedBySlug, getVisibleBySlug } from "@/server/library/store";
 import { TAXONOMY_TAGS } from "@/server/taxonomy/tags";
 
 export const dynamic = "force-dynamic";
@@ -30,8 +35,12 @@ export default async function PublishedRecipePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const recipe = await getPublishedBySlug(slug);
+  const account = await currentAccount();
+  const recipe = await getVisibleBySlug(slug, account.userId);
   if (!recipe) notFound();
+  const favorited = account.userId ? await isFavorite(account.userId, recipe.slug) : false;
+  const collections = account.userId ? await listCollections(account.userId) : [];
+  const isOwner = Boolean(account.userId && recipe.ownerId === account.userId);
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-12 sm:px-6">
@@ -57,7 +66,9 @@ export default async function PublishedRecipePage({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <Badge variant="secondary">Published</Badge>
+        <Badge variant="secondary">
+          {recipe.visibility === "public" ? "Published" : recipe.visibility === "unlisted" ? "Unlisted" : "Private"}
+        </Badge>
         <Badge variant="outline">{PREFERENCE_COPY[recipe.preference].label}</Badge>
         {recipe.goals.map((goal) => (
           <Badge key={goal} variant="outline">
@@ -75,6 +86,19 @@ export default async function PublishedRecipePage({
           </Link>
         ))}
       </div>
+
+      {recipe.ownerName ? (
+        <p className="text-sm text-teal/70">Published by {recipe.ownerName}.</p>
+      ) : null}
+
+      {isOwner ? <VisibilityControl slug={recipe.slug} visibility={recipe.visibility} /> : null}
+
+      <RecipeSaveBar
+        slug={recipe.slug}
+        signedIn={Boolean(account.userId)}
+        favorited={favorited}
+        collections={collections}
+      />
 
       {recipe.nutrition ? <ConvertNutrition nutrition={recipe.nutrition} /> : null}
 
