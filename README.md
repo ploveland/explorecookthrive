@@ -38,7 +38,7 @@ Drafts, conversion jobs, published recipes, accounts, favorites, collections, an
 | `USDA_FDC_API_KEY` | Optional. Live USDA FoodData Central lookup. If empty, a local USDA-derived catalog is used |
 | `AUTH_SECRET` | Auth.js secret. Required in production; a local fallback is used if empty |
 | `AUTH_URL` | Auth.js base URL. Defaults to the local app |
-| `APP_URL` | Canonical site URL for sitemap, robots, and Recipe JSON-LD. Falls back to `AUTH_URL`, then `http://localhost:43123` |
+| `APP_URL` | Canonical site URL for sitemap, robots, and Recipe JSON-LD. Falls back to `AUTH_URL`, then Render’s `RENDER_EXTERNAL_URL`, then `http://localhost:43123` |
 
 Unsplash is not used. GitHub/Google login is not wired yet — email and password is the local account.
 
@@ -47,9 +47,22 @@ Public crawl surfaces: `/`, `/recipes`, `/search`, and public `/recipes/[slug]`.
 ## Scripts
 
 - `npm run dev` — Next.js on port 43123
+- `npm run start` — production server on `$PORT` or 43123
 - `npm test` — domain tests, including eval scoring (no live model calls)
 - `npm run eval` — conversion quality fixtures
 - `npm run db:validate` — Prisma schema check
+
+## Deploy on Render
+
+The live kitchen needs a **persistent disk**. Render’s free web service cannot keep `.data/`. Use a paid instance (Starter or larger).
+
+1. Push this repo to GitHub (`git push github main`).
+2. In [Render](https://dashboard.render.com), open **New → Blueprint** and connect `ploveland/explorecookthrive` (or your fork). Render reads `render.yaml`.
+3. Deploy. The first ship uses the culinary mock and local USDA catalog. Add `OPENAI_API_KEY` (and optionally `USDA_FDC_API_KEY`) under **Environment** when you want live conversions.
+
+Kitchens, published recipes, and ratings persist on the `ect-data` disk across deploys. Take your own backups; a disk is not a database dump.
+
+If `next build` runs out of memory, raise the instance size and redeploy.
 
 ## Eval suite
 
