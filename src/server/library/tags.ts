@@ -69,6 +69,9 @@ export function assignLibraryTags(input: {
     add(tags, "comfort-food");
   }
   if (/cake|cookie|biscuit|bread|muffin|flour/.test(blob)) add(tags, "better-baking");
+  if (/\bfamily\b|\bkids?\b|\bcrowd\b/.test(blob)) add(tags, "family-friendly");
+  if (/meal prep|make[- ]ahead|\bleftovers?\b/.test(blob)) add(tags, "meal-prep");
+  if (/\bbudget\b|inexpensive|pantry staple/.test(blob)) add(tags, "budget-friendly");
 
   return [...tags];
 }

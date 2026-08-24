@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { RecipeCard } from "@/components/recipe-card";
+import type { RatingSummary } from "@/server/community/policy";
 import { getRatingSummaries } from "@/server/community/store";
 import { listPublished } from "@/server/library/store";
 import type { PublishedRecipe } from "@/server/library/schema";
@@ -7,52 +8,84 @@ import type { PublishedRecipe } from "@/server/library/schema";
 const RAILS = [
   {
     title: "Community Tested",
-    tag: "community-tested",
+    kind: "community-tested",
     empty:
       "Cook a published Thrive Version, then rate taste and texture. Three kitchens at 4 or higher who would make it again earn this badge.",
   },
   {
+    title: "Popular",
+    kind: "popular",
+    empty: "Once cooks rate Thrive Versions, the ones they would make again show up here.",
+  },
+  {
     title: "Recently Thrived",
-    tag: null,
+    kind: "recent",
     empty: "New Thrive Versions land here after they are published.",
   },
   {
     title: "Comfort food, reworked",
-    tag: "comfort-food",
+    kind: "tag:comfort-food",
     empty: "The dishes people refuse to give up — fried chicken, mac and cheese, biscuits — treated with respect.",
   },
   {
+    title: "Southern",
+    kind: "tag:southern",
+    empty: "Biscuits, potluck sides, and weeknight pots that still taste like home.",
+  },
+  {
+    title: "Desserts worth keeping",
+    kind: "tag:dessert",
+    empty: "Cakes, cookies, and cobblers where sugar is structure, not a default to delete.",
+  },
+  {
     title: "High protein",
-    tag: "higher-protein",
+    kind: "tag:higher-protein",
     empty: "Dinners that already eat like dinner, with more staying power.",
   },
   {
     title: "Better baking",
-    tag: "better-baking",
+    kind: "tag:better-baking",
     empty: "Cakes, breads, and cookies where structure matters as much as sugar.",
   },
   {
     title: "Weeknight meals",
-    tag: "weeknight",
+    kind: "tag:weeknight",
     empty: "Tuesday food. One pan when we can. Flavor first.",
   },
   {
     title: "Biggest nutrition improvements",
-    tag: "more-fiber",
+    kind: "tag:more-fiber",
     empty: "When a small technique change moves calories, sodium, or fiber in a meaningful way.",
   },
 ] as const;
 
 function pick(
   recipes: PublishedRecipe[],
-  tag: string | null,
+  kind: string,
+  summaries: Record<string, RatingSummary>,
   testedSlugs: Set<string>,
 ) {
-  if (tag === "community-tested") {
+  if (kind === "community-tested") {
     return recipes.filter((recipe) => testedSlugs.has(recipe.slug)).slice(0, 3);
   }
-  const filtered = tag ? recipes.filter((recipe) => recipe.tags.includes(tag)) : recipes;
-  return filtered.slice(0, 3);
+  if (kind === "popular") {
+    return [...recipes]
+      .filter((recipe) => (summaries[recipe.slug]?.count ?? 0) > 0)
+      .sort((a, b) => {
+        const left = summaries[a.slug];
+        const right = summaries[b.slug];
+        const avg = (right?.overallAverage ?? 0) - (left?.overallAverage ?? 0);
+        if (avg !== 0) return avg;
+        return (right?.count ?? 0) - (left?.count ?? 0);
+      })
+      .slice(0, 3);
+  }
+  if (kind === "recent") return recipes.slice(0, 3);
+  if (kind.startsWith("tag:")) {
+    const tag = kind.slice(4);
+    return recipes.filter((recipe) => recipe.tags.includes(tag)).slice(0, 3);
+  }
+  return recipes.slice(0, 3);
 }
 
 export async function DiscoveryRails() {
@@ -82,7 +115,7 @@ export async function DiscoveryRails() {
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {RAILS.map((rail) => {
-          const items = pick(recipes, rail.tag, testedSlugs);
+          const items = pick(recipes, rail.kind, summaries, testedSlugs);
           return (
             <article
               key={rail.title}

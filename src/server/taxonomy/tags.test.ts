@@ -23,6 +23,8 @@ describe("taxonomy", () => {
         "gluten-free",
         "weeknight",
         "higher-protein",
+        "dessert",
+        "family-friendly",
       ]),
     );
   });

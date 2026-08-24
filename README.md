@@ -4,7 +4,7 @@ Keep the flavor. Improve the recipe.
 
 Explore Cook Thrive takes a recipe you already love — pasted or imported from a URL — and looks for nutrition upgrades that respect flavor, texture, and technique. It is not a generic “healthy recipe generator.”
 
-This repository is in **Phase 8**: the conversion kitchen plus community cook notes. Paste or import a recipe, convert it, see USDA estimates, then sign in to publish, favorite, collect, and rate. Public Thrive pages get sitemap, robots, Recipe JSON-LD, and an optional Community Tested badge. On a Thrive Version you can scale servings; per-serving USDA numbers stay put and ingredient amounts move with the pot. Convert, kitchen, and account routes are `noindex`. Guests get 2 conversions; signed-in kitchens get 10 per UTC day. The language model never invents calorie numbers.
+This repository is in **Phase 8**: the conversion kitchen plus community cook notes. Paste or import a recipe, convert it, see USDA estimates, then sign in to publish, favorite, collect, and rate. Browse the library by tag or USDA per-serving bounds (calories, protein, fiber, sodium). Public Thrive pages get sitemap, robots, Recipe JSON-LD, and an optional Community Tested badge. On a Thrive Version you can scale servings; per-serving USDA numbers stay put and ingredient amounts move with the pot. Convert, kitchen, and account routes are `noindex`. Guests get 2 conversions; signed-in kitchens get 10 per UTC day. The language model never invents calorie numbers.
 
 Paste a recipe or a URL on the homepage. We structure it (JSON-LD first for URLs), you confirm the reading, then we convert it. Without `OPENAI_API_KEY`, conversions use a local culinary mock so the loop is still usable.
 

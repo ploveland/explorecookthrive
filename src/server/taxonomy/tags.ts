@@ -44,6 +44,9 @@ export const TAXONOMY_TAGS: TaxonomyTag[] = [
 
   { slug: "comfort-food", name: "Comfort food", type: "COLLECTION_THEME" },
   { slug: "better-baking", name: "Better baking", type: "COLLECTION_THEME" },
+  { slug: "family-friendly", name: "Family friendly", type: "COLLECTION_THEME" },
+  { slug: "meal-prep", name: "Meal prep", type: "COLLECTION_THEME" },
+  { slug: "budget-friendly", name: "Budget friendly", type: "COLLECTION_THEME" },
   { slug: "recently-thrived", name: "Recently Thrived", type: "COLLECTION_THEME" },
 ];
 

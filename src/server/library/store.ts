@@ -3,6 +3,7 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { ConversionJob } from "../convert/schema";
 import { assignLibraryTags } from "./tags";
+import { matchesNutritionFilters, type NutritionFilters } from "./nutrition-filter";
 import { publishedRecipeSchema, type PublishedRecipe } from "./schema";
 
 const DIR = path.join(process.cwd(), ".data", "library");
@@ -74,14 +75,17 @@ export async function getPublishedByJobId(jobId: string): Promise<PublishedRecip
 export async function listPublished(filters?: {
   tag?: string | null;
   query?: string | null;
+  nutrition?: NutritionFilters | null;
 }): Promise<PublishedRecipe[]> {
   const recipes = await readAll();
   const tag = filters?.tag?.trim().toLowerCase() || null;
   const query = filters?.query?.trim().toLowerCase() || null;
+  const nutrition = filters?.nutrition ?? null;
 
   return recipes.filter((recipe) => {
     if (recipe.visibility !== "public") return false;
     if (tag && !recipe.tags.includes(tag)) return false;
+    if (nutrition && !matchesNutritionFilters(recipe, nutrition)) return false;
     if (!query) return true;
     const haystack = [
       recipe.title,
