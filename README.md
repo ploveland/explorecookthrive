@@ -4,7 +4,7 @@ Keep the flavor. Improve the recipe.
 
 Explore Cook Thrive takes a recipe you already love — pasted or imported from a URL — and looks for nutrition upgrades that respect flavor, texture, and technique. It is not a generic “healthy recipe generator.”
 
-This repository is in **Phase 3**: paste or import a recipe, confirm the reading, choose nutrition goals, and get a private Thrive Version. USDA nutrition estimates are still next.
+This repository is in **Phase 4**: paste or import a recipe, confirm the reading, choose nutrition goals, get a private Thrive Version, and see USDA-based nutrition estimates for the original and the rewrite. The language model never invents calorie or macro numbers.
 
 Paste a recipe or a URL on the homepage. We structure it (JSON-LD first for URLs), you confirm the reading, then we convert it. Without `OPENAI_API_KEY`, conversions use a local culinary mock so the loop is still usable.
 
@@ -29,7 +29,7 @@ App: [http://localhost:43123](http://localhost:43123)
 | `OPENAI_API_KEY` | If empty, conversions use the local culinary mock |
 | `OPENAI_MODEL` | Defaults to `gpt-4.1-mini` |
 | `CONVERT_STAGE_DELAY_MS` | Optional pause between job stages (default 350) |
-| `USDA_FDC_API_KEY` | USDA FoodData Central, Phase 4 |
+| `USDA_FDC_API_KEY` | Optional. Live USDA FoodData Central lookup. If empty, a local USDA-derived catalog is used |
 
 Auth is intentionally not implemented yet. Unsplash is not used.
 

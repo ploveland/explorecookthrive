@@ -334,7 +334,7 @@ export function mockConvert(input: ConvertRecipeInput): ConversionOutput {
       tasteImpact: tasteImpactFor(input.preference),
       assumptions: [
         ...dietaryAssumptions(input),
-        "Nutrition numbers are not guessed here. USDA estimates come in a later step.",
+        "Nutrition numbers are not guessed here. USDA estimates are attached after conversion.",
       ],
     },
     thriveVersion: {

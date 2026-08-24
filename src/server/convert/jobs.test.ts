@@ -87,6 +87,11 @@ describe("conversion jobs", () => {
     expect(done?.output?.thriveVersion.ingredients.length).toBeGreaterThan(0);
     expect(done?.output?.changes.length).toBeGreaterThan(0);
     expect(JSON.stringify(done?.output)).not.toMatch(/"nutrition"\s*:/);
+    expect(done?.nutrition).not.toBeNull();
+    expect(done?.nutrition?.original.totals.calories).toBeGreaterThan(0);
+    expect(done?.nutrition?.thrive.totals.fiberG).toBeGreaterThanOrEqual(
+      done?.nutrition?.original.totals.fiberG ?? 0,
+    );
 
     const stored = await getJob(job.id);
     expect(stored?.status).toBe("complete");

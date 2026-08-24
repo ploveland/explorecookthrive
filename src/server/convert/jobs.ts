@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { getDraft } from "../drafts/store";
 import { log } from "../log";
+import { compareRecipeNutrition, type NutritionIngredientInput } from "../nutrition/estimate";
 import { inputFromExtractedRecipe } from "./from-recipe";
 import { hasLiveLlm, runConversion } from "./run";
 import {
@@ -89,6 +90,7 @@ export async function createJob(input: {
     model: live ? (process.env.OPENAI_MODEL ?? "gpt-4.1-mini") : "culinary-mock-v1",
     promptVersion: PROMPT_VERSION,
     output: null,
+    nutrition: null,
     errorCode: null,
     errorMessage: null,
     inputTokens: null,
@@ -114,7 +116,10 @@ export async function processJob(id: string): Promise<ConversionJob | null> {
 
   try {
     const delay = stageDelayMs();
-    for (const stage of ACTIVE_JOB_STAGES) {
+    const estimateStage = ACTIVE_JOB_STAGES.find((stage) => stage.status === "estimating");
+    const beforeEstimate = ACTIVE_JOB_STAGES.filter((stage) => stage.status !== "estimating");
+
+    for (const stage of beforeEstimate) {
       await setStatus(id, stage.status, stage.label);
       if (delay > 0) {
         await new Promise((resolve) => setTimeout(resolve, delay));
@@ -128,14 +133,39 @@ export async function processJob(id: string): Promise<ConversionJob | null> {
       inputFromExtractedRecipe(current.recipe, current.goals, current.preference, current.dietary),
     );
 
+    if (estimateStage) {
+      await setStatus(id, estimateStage.status, estimateStage.label);
+      if (delay > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+
+    const latest = (await getJob(id)) ?? current;
+    let nutrition = null;
+    try {
+      nutrition = await compareRecipeNutrition({
+        original: toNutritionInputs(latest.recipe.ingredients),
+        originalServings: latest.recipe.servings,
+        thrive: toNutritionInputs(result.output.thriveVersion.ingredients),
+        thriveServings: result.output.thriveVersion.servings,
+      });
+    } catch (error) {
+      log.error("convert.nutrition_failed", {
+        jobId: id,
+        success: false,
+        errorCode: error instanceof Error ? error.name : "nutrition_failed",
+      });
+    }
+
     const done = await writeJob({
-      ...current,
+      ...latest,
       status: "complete",
       statusLabel: "Ready",
       provider: result.provider,
       model: result.model,
       promptVersion: result.promptVersion,
       output: result.output,
+      nutrition,
       inputTokens: result.inputTokens,
       outputTokens: result.outputTokens,
       latencyMs: result.latencyMs,
@@ -172,6 +202,17 @@ export async function processJob(id: string): Promise<ConversionJob | null> {
   } finally {
     running.delete(id);
   }
+}
+
+function toNutritionInputs(
+  items: { rawText: string; name: string | null; quantity: number | null; unit: string | null }[],
+): NutritionIngredientInput[] {
+  return items.map((item) => ({
+    rawText: item.rawText,
+    name: item.name,
+    quantity: item.quantity,
+    unit: item.unit,
+  }));
 }
 
 export function startJob(id: string) {

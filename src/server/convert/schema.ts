@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { conversionOutputSchema } from "../ai/types";
+import { nutritionComparisonSchema } from "../nutrition/schema";
 import { extractedRecipeSchema } from "../recipes/schema";
 
 export const nutritionGoals = [
@@ -159,6 +160,7 @@ export const conversionJobSchema = z.object({
   model: z.string(),
   promptVersion: z.string(),
   output: conversionOutputSchema.nullable(),
+  nutrition: nutritionComparisonSchema.nullable().default(null),
   errorCode: z.string().nullable(),
   errorMessage: z.string().nullable(),
   inputTokens: z.number().nullable(),
@@ -176,7 +178,7 @@ export const ACTIVE_JOB_STAGES: { status: ConversionJobStatus; label: string }[]
   { status: "reading", label: "Reading the recipe you confirmed" },
   { status: "understanding", label: "Naming flavor, texture, and structure" },
   { status: "improving", label: "Looking for upgrades that earn their keep" },
-  { status: "estimating", label: "Leaving calorie math to USDA — not the model" },
   { status: "protecting", label: "Protecting the parts that make this dish itself" },
   { status: "creating", label: "Writing the Thrive Version" },
+  { status: "estimating", label: "Estimating nutrition with USDA FoodData Central" },
 ];

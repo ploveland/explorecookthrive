@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ConversionOutput } from "@/server/ai/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConvertNutrition } from "@/components/convert-nutrition";
 import {
   DIETARY_COPY,
   GOAL_COPY,
@@ -56,13 +57,16 @@ export function ConvertResult({
       {job.provider === "mock" ? (
         <p className="rounded-2xl bg-sage/15 px-4 py-3 text-sm text-teal ring-1 ring-sage/40">
           This Thrive Version was written by the local culinary mock because no OpenAI key is
-          set. USDA nutrition estimates are still a later step.
+          set. Nutrition numbers below still come from USDA values, not from the mock.
         </p>
       ) : (
         <p className="rounded-2xl bg-sage/15 px-4 py-3 text-sm text-teal ring-1 ring-sage/40">
-          Nutrition numbers are not guessed by the model. USDA estimates come next.
+          The rewrite does not invent calories. Macros are estimated from USDA FoodData Central
+          after the Thrive Version is written.
         </p>
       )}
+
+      {job.nutrition ? <ConvertNutrition nutrition={job.nutrition} /> : null}
 
       <section className="space-y-3">
         <h2 className="font-heading text-2xl text-teal">What we would not change</h2>
