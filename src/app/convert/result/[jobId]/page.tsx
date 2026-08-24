@@ -1,6 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import { ConvertResult } from "@/components/convert-result";
 import { getJob } from "@/server/convert/jobs";
+import { getPublishedByJobId } from "@/server/library/store";
+
+export const dynamic = "force-dynamic";
 
 export default async function ConvertResultPage({
   params,
@@ -14,13 +17,15 @@ export default async function ConvertResultPage({
     redirect(`/convert/working/${jobId}`);
   }
 
+  const published = await getPublishedByJobId(job.id);
+
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-12 sm:px-6">
       <p className="text-sm font-semibold tracking-[0.18em] text-terracotta uppercase">
         Thrive Version
       </p>
       <h1 className="font-heading text-4xl text-teal">{job.output.thriveVersion.title}</h1>
-      <ConvertResult job={{ ...job, output: job.output }} />
+      <ConvertResult job={{ ...job, output: job.output }} publishedSlug={published?.slug ?? null} />
     </div>
   );
 }

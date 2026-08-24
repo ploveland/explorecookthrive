@@ -3,6 +3,7 @@ import type { ConversionOutput } from "@/server/ai/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConvertNutrition } from "@/components/convert-nutrition";
+import { PublishThriveForm } from "@/components/publish-thrive-form";
 import {
   DIETARY_COPY,
   GOAL_COPY,
@@ -32,15 +33,19 @@ function IngredientList({
 
 export function ConvertResult({
   job,
+  publishedSlug,
 }: {
   job: ConversionJob & { output: ConversionOutput; recipe: ExtractedRecipe };
+  publishedSlug?: string | null;
 }) {
   const output = job.output;
 
   return (
     <div className="space-y-10">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge variant="secondary">Private</Badge>
+        <Badge variant={publishedSlug ? "outline" : "secondary"}>
+          {publishedSlug ? "Published" : "Private"}
+        </Badge>
         <Badge variant="outline">{PREFERENCE_COPY[job.preference].label}</Badge>
         {job.goals.map((goal) => (
           <Badge key={goal} variant="outline">
@@ -133,9 +138,10 @@ export function ConvertResult({
         </section>
       ) : null}
 
+      <PublishThriveForm jobId={job.id} publishedSlug={publishedSlug ?? null} />
+
       <p className="text-sm text-teal/70">
-        Taste impact: {output.analysis.tasteImpact}. This version stays private until publishing
-        exists.
+        Taste impact: {output.analysis.tasteImpact}.
       </p>
 
       <div className="flex flex-wrap gap-3">

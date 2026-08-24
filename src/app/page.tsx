@@ -1,6 +1,8 @@
 import { DiscoveryRails } from "@/components/discovery-rails";
 import { ThriveIntakeForm } from "@/components/thrive-intake-form";
 
+export const dynamic = "force-dynamic";
+
 export default function HomePage() {
   return (
     <div className="flex flex-col">

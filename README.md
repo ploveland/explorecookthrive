@@ -4,9 +4,11 @@ Keep the flavor. Improve the recipe.
 
 Explore Cook Thrive takes a recipe you already love — pasted or imported from a URL — and looks for nutrition upgrades that respect flavor, texture, and technique. It is not a generic “healthy recipe generator.”
 
-This repository is in **Phase 4**: paste or import a recipe, confirm the reading, choose nutrition goals, get a private Thrive Version, and see USDA-based nutrition estimates for the original and the rewrite. The language model never invents calorie or macro numbers.
+This repository is in **Phase 5**: paste or import a recipe, confirm it, convert it, see USDA estimates, and publish a short Thrive Version to the public library. Auth is still later. The language model never invents calorie numbers.
 
 Paste a recipe or a URL on the homepage. We structure it (JSON-LD first for URLs), you confirm the reading, then we convert it. Without `OPENAI_API_KEY`, conversions use a local culinary mock so the loop is still usable.
+
+The private result page can publish the Thrive Version. That writes ingredients, steps, what changed, USDA estimates, and original-title attribution to `.data/library`. It does not republish a full imported original recipe. Browse at `/recipes`, search at `/search`, and the homepage rails fill from the same shelf.
 
 ## Run locally
 
@@ -19,6 +21,8 @@ npm run dev
 ```
 
 App: [http://localhost:43123](http://localhost:43123)
+
+Drafts, conversion jobs, and published recipes currently live in `.data/` (gitignored). Postgres is reserved for later; the current loop does not require it.
 
 ## Environment
 
