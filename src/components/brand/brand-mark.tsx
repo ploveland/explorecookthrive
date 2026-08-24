@@ -12,29 +12,20 @@ export function BrandMark({
     <Link
       href="/"
       className={cn(
-        "group flex items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "group inline-flex items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         className,
       )}
     >
       <img
-        src="/brand/mark.svg"
-        alt=""
-        width={44}
-        height={44}
-        className="size-11 rounded-full ring-2 ring-cream"
+        src="/brand/logo.png"
+        alt="Explore Cook Thrive — Love your food. Nourish your life."
+        width={1254}
+        height={1254}
+        className={cn(
+          "h-auto w-auto object-contain",
+          compact ? "h-12 sm:h-14" : "h-16 sm:h-20",
+        )}
       />
-      <span className="leading-none">
-        <span className="font-heading block text-lg tracking-tight">
-          <span className="text-teal">Explore</span>{" "}
-          <span className="text-sage">Cook</span>{" "}
-          <span className="text-terracotta">Thrive</span>
-        </span>
-        {!compact ? (
-          <span className="mt-1 block text-xs tracking-[0.12em] text-teal/80 uppercase">
-            Love your food. Nourish your life.
-          </span>
-        ) : null}
-      </span>
     </Link>
   );
 }

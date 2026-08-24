@@ -12,9 +12,11 @@ export default function HomePage() {
         <div className="relative mx-auto grid max-w-6xl gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:py-24">
           <div className="flex flex-col justify-center">
             <img
-              src="/brand/logo.svg"
+              src="/brand/logo.png"
               alt="Explore Cook Thrive — Love your food. Nourish your life."
-              className="mb-6 h-44 w-auto max-w-[240px] sm:h-56"
+              width={1254}
+              height={1254}
+              className="mb-6 h-auto w-44 max-w-full object-contain sm:w-56"
             />
             <p className="text-sm font-semibold tracking-[0.18em] text-terracotta uppercase">
               Keep the flavor. Improve the recipe.

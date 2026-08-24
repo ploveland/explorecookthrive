@@ -22,6 +22,23 @@ export const metadata: Metadata = {
   },
   description:
     "Keep the flavor. Improve the recipe. Explore Cook Thrive finds nutrition upgrades that respect the dish you already love.",
+  icons: {
+    icon: "/brand/logo.png",
+    apple: "/brand/logo.png",
+  },
+  openGraph: {
+    title: "Explore Cook Thrive",
+    description:
+      "Keep the flavor. Improve the recipe. Explore Cook Thrive finds nutrition upgrades that respect the dish you already love.",
+    images: [
+      {
+        url: "/brand/logo.png",
+        width: 1254,
+        height: 1254,
+        alt: "Explore Cook Thrive — Love your food. Nourish your life.",
+      },
+    ],
+  },
 };
 
 export default function RootLayout({
