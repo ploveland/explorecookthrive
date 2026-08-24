@@ -8,6 +8,7 @@ import { DIETARY_COPY, GOAL_COPY, PREFERENCE_COPY } from "@/server/convert/schem
 import { CommunityBadge } from "@/components/community-badge";
 import { RecipeRatingPanel } from "@/components/recipe-rating";
 import { RecipeSaveBar } from "@/components/recipe-save-bar";
+import { ScaledRecipe } from "@/components/scaled-recipe";
 import { VisibilityControl } from "@/components/visibility-control";
 import { listCollections } from "@/server/accounts/collections";
 import { isFavorite } from "@/server/accounts/favorites";
@@ -174,26 +175,15 @@ export default async function PublishedRecipePage({
         <p className="text-xs font-semibold tracking-[0.16em] text-terracotta uppercase">
           Thrive Version
         </p>
-        <p className="mt-2 text-sm text-teal/70">
-          {recipe.servings} servings
-          {recipe.prepMinutes ? ` · ${recipe.prepMinutes} min prep` : ""}
-          {recipe.cookMinutes ? ` · ${recipe.cookMinutes} min cook` : ""}
-        </p>
-        <ul className="mt-4 space-y-2 text-sm text-teal">
-          {recipe.ingredients.map((item) => (
-            <li key={item.rawText}>
-              {item.rawText}
-              {item.assumptionNote ? (
-                <span className="mt-0.5 block text-xs text-teal/65">{item.assumptionNote}</span>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-        <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm text-teal/80">
-          {recipe.instructions.map((step) => (
-            <li key={step}>{step}</li>
-          ))}
-        </ol>
+        <div className="mt-3">
+          <ScaledRecipe
+            servings={recipe.servings}
+            prepMinutes={recipe.prepMinutes}
+            cookMinutes={recipe.cookMinutes}
+            ingredients={recipe.ingredients}
+            instructions={recipe.instructions}
+          />
+        </div>
       </section>
 
       <p className="text-sm text-teal/70">Taste impact: {recipe.tasteImpact}.</p>

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConvertNutrition } from "@/components/convert-nutrition";
 import { PublishThriveForm } from "@/components/publish-thrive-form";
+import { ScaledRecipe } from "@/components/scaled-recipe";
 import {
   DIETARY_COPY,
   GOAL_COPY,
@@ -118,14 +119,15 @@ export function ConvertResult({
           <p className="text-xs font-semibold tracking-[0.16em] text-terracotta uppercase">
             Thrive Version
           </p>
-          <h3 className="font-heading mt-2 text-2xl text-teal">{output.thriveVersion.title}</h3>
-          <p className="mt-1 text-sm text-teal/75">{output.thriveVersion.description}</p>
-          <IngredientList items={output.thriveVersion.ingredients} />
-          <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm text-teal/80">
-            {output.thriveVersion.instructions.map((step) => (
-              <li key={step}>{step}</li>
-            ))}
-          </ol>
+          <ScaledRecipe
+            title={output.thriveVersion.title}
+            description={output.thriveVersion.description}
+            servings={output.thriveVersion.servings}
+            prepMinutes={output.thriveVersion.prepMinutes}
+            cookMinutes={output.thriveVersion.cookMinutes}
+            ingredients={output.thriveVersion.ingredients}
+            instructions={output.thriveVersion.instructions}
+          />
         </div>
       </section>
 

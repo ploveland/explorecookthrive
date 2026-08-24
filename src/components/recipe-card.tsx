@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { CommunityBadge } from "@/components/community-badge";
+import { GOAL_COPY } from "@/server/convert/schema";
 import type { RatingSummary } from "@/server/community/policy";
 import type { PublishedRecipe } from "@/server/library/schema";
+import { nutritionCardHighlight } from "@/server/nutrition/highlight";
 import { TAXONOMY_TAGS } from "@/server/taxonomy/tags";
 
 function tagLabel(slug: string) {
@@ -17,6 +19,8 @@ export function RecipeCard({
   community?: RatingSummary;
 }) {
   const shown = recipe.tags.slice(0, 3);
+  const highlight = nutritionCardHighlight(recipe.nutrition);
+  const primaryGoal = recipe.goals[0] ? GOAL_COPY[recipe.goals[0]].label : null;
 
   return (
     <Link
@@ -37,6 +41,18 @@ export function RecipeCard({
       </h3>
       <p className="mt-1 text-xs text-teal/60">Based on {recipe.originalTitle}</p>
       <p className="mt-2 line-clamp-3 text-sm leading-6 text-teal/80">{recipe.description}</p>
+      {highlight ? (
+        <p className="mt-2 text-sm text-teal">
+          {highlight.calories}
+          {highlight.improvement ? (
+            <span className="mt-0.5 block text-xs text-teal/70">{highlight.improvement}</span>
+          ) : null}
+        </p>
+      ) : null}
+      <p className="mt-1 text-xs text-teal/65">
+        {primaryGoal ? `${primaryGoal} · ` : null}
+        Taste impact: {recipe.tasteImpact}
+      </p>
       {community && community.count > 0 ? (
         <p className="mt-2 text-sm text-teal/70">
           {community.overallAverage ?? "—"} / 5 from {community.count}{" "}
