@@ -8,9 +8,9 @@ This repository is in **Phase 8**: the conversion kitchen plus community cook no
 
 Paste a recipe or a URL on the homepage. We structure it (JSON-LD first for URLs), you confirm the reading, then we convert it. Without `OPENAI_API_KEY`, conversions use a local culinary mock so the loop is still usable.
 
-Sign in with email and a password (Auth.js credentials). Publishing requires an account. History is at `/kitchen`, favorites at `/kitchen/favorites`, collections at `/kitchen/collections`. Guest conversions are claimed when you sign in. After you cook a public Thrive Version, rate taste and texture. **Community Tested** means at least three other kitchens scored both 4 or higher and would make it again. Accounts, favorites, collections, and ratings live in `.data/` alongside drafts and the library.
+Sign in with email and a password (Auth.js credentials). Publishing requires an account. History is at `/kitchen`, favorites at `/kitchen/favorites`, collections at `/kitchen/collections`. Guest conversions are claimed when you sign in. After you cook a public Thrive Version, rate taste, texture, similarity to the original, and ease. You can leave an optional short note. **Community Tested** means at least three other kitchens scored taste and texture 4 or higher and would make it again. Accounts, favorites, collections, ratings, and cook notes live in `.data/` alongside drafts and the library.
 
-Structured logs record job ids, extract codes, search result counts, publish slugs, and rating counts. Recipe bodies, ingredients, instructions, and prompts are stripped before a line is written.
+Structured logs record job ids, extract codes, search result counts, publish slugs, and rating counts. Recipe bodies, ingredients, instructions, prompts, and cook notes are stripped before a line is written.
 
 ## Run locally
 

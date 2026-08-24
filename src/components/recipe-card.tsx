@@ -37,6 +37,12 @@ export function RecipeCard({
       </h3>
       <p className="mt-1 text-xs text-teal/60">Based on {recipe.originalTitle}</p>
       <p className="mt-2 line-clamp-3 text-sm leading-6 text-teal/80">{recipe.description}</p>
+      {community && community.count > 0 ? (
+        <p className="mt-2 text-sm text-teal/70">
+          {community.overallAverage ?? "—"} / 5 from {community.count}{" "}
+          {community.count === 1 ? "cook" : "cooks"}
+        </p>
+      ) : null}
       {shown.length > 0 ? (
         <div className="mt-4 flex flex-wrap gap-2">
           {shown.map((tag) => (

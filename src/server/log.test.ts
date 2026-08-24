@@ -14,6 +14,7 @@ describe("log sanitizer", () => {
       instructions: "Cream the butter.",
       prompt: "secret",
       recipe: "private body",
+      comment: "Still tasted like chili.",
       success: true,
     });
     expect(spy).toHaveBeenCalledTimes(1);
@@ -24,5 +25,6 @@ describe("log sanitizer", () => {
     expect(payload.instructions).toBeUndefined();
     expect(payload.prompt).toBeUndefined();
     expect(payload.recipe).toBeUndefined();
+    expect(payload.comment).toBeUndefined();
   });
 });

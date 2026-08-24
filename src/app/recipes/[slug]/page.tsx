@@ -12,7 +12,7 @@ import { VisibilityControl } from "@/components/visibility-control";
 import { listCollections } from "@/server/accounts/collections";
 import { isFavorite } from "@/server/accounts/favorites";
 import { currentAccount } from "@/server/accounts/session";
-import { getRatingSummary, getUserRating } from "@/server/community/store";
+import { getRatingSummary, getUserRating, listPublicReviews } from "@/server/community/store";
 import { getVisibleBySlug } from "@/server/library/store";
 import { recipeJsonLd, shouldIndexRecipe } from "@/server/seo/jsonld";
 import { siteUrl } from "@/server/seo/site";
@@ -60,6 +60,7 @@ export default async function PublishedRecipePage({
   const isOwner = Boolean(account.userId && recipe.ownerId === account.userId);
   const community = await getRatingSummary(recipe.slug);
   const mine = account.userId ? await getUserRating(recipe.slug, account.userId) : null;
+  const reviews = await listPublicReviews(recipe.slug);
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-12 sm:px-6">
@@ -133,6 +134,7 @@ export default async function PublishedRecipePage({
         isPublic={recipe.visibility === "public"}
         summary={community}
         mine={mine}
+        reviews={reviews}
       />
 
       {recipe.nutrition ? <ConvertNutrition nutrition={recipe.nutrition} /> : null}

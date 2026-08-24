@@ -64,9 +64,12 @@ describe("recipe SEO", () => {
       count: 3,
       tasteAverage: 4.3,
       textureAverage: 4.3,
+      similarityAverage: 4.3,
+      easeAverage: 4.3,
       overallAverage: 4.3,
       wouldMakeAgainCount: 3,
       wouldMakeAgainRatio: 1,
+      reviewCount: 0,
       communityTested: true,
     });
     expect(json.aggregateRating).toMatchObject({

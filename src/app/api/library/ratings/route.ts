@@ -10,7 +10,10 @@ const bodySchema = z.object({
   slug: z.string().min(1),
   taste: z.number().int().min(1).max(5),
   texture: z.number().int().min(1).max(5),
+  similarity: z.number().int().min(1).max(5),
+  ease: z.number().int().min(1).max(5),
   wouldMakeAgain: z.boolean(),
+  comment: z.string().max(600).optional(),
 });
 
 export async function POST(request: Request) {
@@ -37,7 +40,10 @@ export async function POST(request: Request) {
       visibility: recipe.visibility,
       taste: body.taste,
       texture: body.texture,
+      similarity: body.similarity,
+      ease: body.ease,
       wouldMakeAgain: body.wouldMakeAgain,
+      comment: body.comment,
     });
     revalidatePath("/");
     revalidatePath("/recipes");
@@ -54,7 +60,7 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(
-        { code: "invalid_input", message: "Rate taste and texture from 1 to 5." },
+        { code: "invalid_input", message: "Rate taste, texture, similarity, and ease from 1 to 5." },
         { status: 400 },
       );
     }

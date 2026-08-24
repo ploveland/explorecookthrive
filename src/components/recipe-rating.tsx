@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { CommunityBadge, communityTestedCopy } from "@/components/community-badge";
-import type { RecipeRating, RatingSummary } from "@/server/community/policy";
-import { COMMUNITY_TESTED_MIN_RATINGS } from "@/server/community/policy";
+import type { PublicReview, RecipeRating, RatingSummary } from "@/server/community/policy";
+import { COMMENT_MAX_LENGTH, COMMUNITY_TESTED_MIN_RATINGS } from "@/server/community/policy";
 import { cn } from "@/lib/utils";
 
 const TASTE_COPY = {
@@ -21,6 +22,18 @@ const TEXTURE_COPY = {
   high: "Held the original",
 };
 
+const SIMILARITY_COPY = {
+  legend: "Similarity — would someone who loves the original recognize it?",
+  low: "A different dish",
+  high: "Clearly the original",
+};
+
+const EASE_COPY = {
+  legend: "Ease — how was it to cook?",
+  low: "A struggle",
+  high: "Weeknight-easy",
+};
+
 export function RecipeRatingPanel({
   slug,
   signedIn,
@@ -28,6 +41,7 @@ export function RecipeRatingPanel({
   isPublic,
   summary,
   mine,
+  reviews,
 }: {
   slug: string;
   signedIn: boolean;
@@ -35,19 +49,23 @@ export function RecipeRatingPanel({
   isPublic: boolean;
   summary: RatingSummary;
   mine: RecipeRating | null;
+  reviews: PublicReview[];
 }) {
   const router = useRouter();
   const [taste, setTaste] = useState(mine?.taste ?? 0);
   const [texture, setTexture] = useState(mine?.texture ?? 0);
+  const [similarity, setSimilarity] = useState(mine?.similarity ?? 0);
+  const [ease, setEase] = useState(mine?.ease ?? 0);
   const [wouldMakeAgain, setWouldMakeAgain] = useState(mine?.wouldMakeAgain ?? true);
+  const [comment, setComment] = useState(mine?.comment ?? "");
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     setMessage(null);
-    if (taste < 1 || texture < 1) {
-      setMessage("Choose a taste score and a texture score.");
+    if (taste < 1 || texture < 1 || similarity < 1 || ease < 1) {
+      setMessage("Choose taste, texture, similarity, and ease.");
       return;
     }
     setPending(true);
@@ -55,7 +73,15 @@ export function RecipeRatingPanel({
       const response = await fetch("/api/library/ratings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, taste, texture, wouldMakeAgain }),
+        body: JSON.stringify({
+          slug,
+          taste,
+          texture,
+          similarity,
+          ease,
+          wouldMakeAgain,
+          comment,
+        }),
       });
       const payload = (await response.json().catch(() => null)) as { message?: string } | null;
       if (!response.ok) {
@@ -74,7 +100,7 @@ export function RecipeRatingPanel({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-semibold tracking-[0.16em] text-teal/60 uppercase">Cooked it?</p>
-          <h2 className="font-heading mt-1 text-2xl text-teal">Taste and texture</h2>
+          <h2 className="font-heading mt-1 text-2xl text-teal">From other kitchens</h2>
         </div>
         <CommunityBadge summary={summary} />
       </div>
@@ -86,9 +112,11 @@ export function RecipeRatingPanel({
           again.
         </p>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <ScoreStat label="Taste" value={summary.tasteAverage} />
           <ScoreStat label="Texture" value={summary.textureAverage} />
+          <ScoreStat label="Similarity" value={summary.similarityAverage} />
+          <ScoreStat label="Ease" value={summary.easeAverage} />
           <ScoreStat
             label="Would make again"
             value={
@@ -107,6 +135,26 @@ export function RecipeRatingPanel({
         </p>
       ) : null}
 
+      {reviews.length > 0 ? (
+        <div className="space-y-3">
+          <h3 className="font-heading text-xl text-teal">Cook notes</h3>
+          <ul className="space-y-3">
+            {reviews.map((review) => (
+              <li key={`${review.userId}-${review.updatedAt}`} className="rounded-2xl bg-cream/80 px-4 py-3 ring-1 ring-teal/10">
+                <p className="text-sm font-medium text-teal">{review.cookName}</p>
+                <p className="mt-1 text-xs text-teal/65">
+                  Taste {review.taste} · Texture {review.texture}
+                  {review.similarity ? ` · Similarity ${review.similarity}` : ""}
+                  {review.ease ? ` · Ease ${review.ease}` : ""}
+                  {review.wouldMakeAgain ? " · Would make again" : " · Would not make again"}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-teal/80">{review.comment}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       {!isPublic ? (
         <p className="text-sm text-teal/75">Publish this Thrive Version if you want cooks to rate it.</p>
       ) : isOwner ? (
@@ -121,30 +169,23 @@ export function RecipeRatingPanel({
           >
             Sign in
           </Link>{" "}
-          to rate taste and texture after you cook it.
+          to rate it after you cook it, and optionally leave a short note.
         </p>
       ) : (
         <form onSubmit={onSubmit} className="space-y-5">
+          <ScaleField name="taste" copy={TASTE_COPY} value={taste} onChange={setTaste} />
+          <ScaleField name="texture" copy={TEXTURE_COPY} value={texture} onChange={setTexture} />
           <ScaleField
-            name="taste"
-            copy={TASTE_COPY}
-            value={taste}
-            onChange={setTaste}
+            name="similarity"
+            copy={SIMILARITY_COPY}
+            value={similarity}
+            onChange={setSimilarity}
           />
-          <ScaleField
-            name="texture"
-            copy={TEXTURE_COPY}
-            value={texture}
-            onChange={setTexture}
-          />
+          <ScaleField name="ease" copy={EASE_COPY} value={ease} onChange={setEase} />
           <fieldset>
             <legend className="text-sm font-medium text-teal">Would you make this again?</legend>
             <div className="mt-2 flex flex-wrap gap-2">
-              <Choice
-                selected={wouldMakeAgain}
-                onClick={() => setWouldMakeAgain(true)}
-                label="Yes"
-              />
+              <Choice selected={wouldMakeAgain} onClick={() => setWouldMakeAgain(true)} label="Yes" />
               <Choice
                 selected={!wouldMakeAgain}
                 onClick={() => setWouldMakeAgain(false)}
@@ -152,11 +193,20 @@ export function RecipeRatingPanel({
               />
             </div>
           </fieldset>
-          <Button
-            type="submit"
-            disabled={pending}
-            className="h-11 bg-teal px-5 text-cream"
-          >
+          <label className="block space-y-2">
+            <span className="text-sm font-medium text-teal">Optional note</span>
+            <Textarea
+              value={comment}
+              maxLength={COMMENT_MAX_LENGTH}
+              onChange={(event) => setComment(event.target.value)}
+              placeholder="What held up, what you would tweak, whether guests recognized the dish."
+              className="min-h-24 bg-white/80"
+            />
+            <span className="block text-xs text-teal/60">
+              {comment.trim().length}/{COMMENT_MAX_LENGTH}
+            </span>
+          </label>
+          <Button type="submit" disabled={pending} className="h-11 bg-teal px-5 text-cream">
             {mine ? "Update rating" : "Save rating"}
           </Button>
           {message ? <p className="text-sm text-teal/75">{message}</p> : null}

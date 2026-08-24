@@ -1,15 +1,28 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
-import { emptySummary, summarizeRatings, type RecipeRating, type RatingSummary } from "./policy";
+import { getUserById } from "@/server/accounts/users";
+import {
+  cleanComment,
+  emptySummary,
+  summarizeRatings,
+  type PublicReview,
+  type RecipeRating,
+  type RatingSummary,
+} from "./policy";
 
 const DIR = path.join(process.cwd(), ".data", "ratings");
 
+const score = z.number().int().min(1).max(5);
+
 const ratingSchema = z.object({
   userId: z.string().min(1),
-  taste: z.number().int().min(1).max(5),
-  texture: z.number().int().min(1).max(5),
+  taste: score,
+  texture: score,
+  similarity: score.nullable().default(null),
+  ease: score.nullable().default(null),
   wouldMakeAgain: z.boolean(),
+  comment: z.string().max(600).nullable().default(null),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -35,6 +48,11 @@ async function ensureDir() {
 
 function fileFor(slug: string) {
   return path.join(DIR, `${slug}.json`);
+}
+
+function cookDisplayName(name: string | undefined) {
+  const first = name?.trim().split(/\s+/)[0];
+  return first || "A cook";
 }
 
 async function readFileRatings(slug: string): Promise<RecipeRating[]> {
@@ -71,6 +89,28 @@ export async function getUserRating(slug: string, userId: string): Promise<Recip
   return ratings.find((rating) => rating.userId === userId) ?? null;
 }
 
+export async function listPublicReviews(slug: string): Promise<PublicReview[]> {
+  const ratings = await readFileRatings(slug);
+  const withComments = ratings.filter((rating) => rating.comment);
+  const reviews = await Promise.all(
+    withComments.map(async (rating) => {
+      const user = await getUserById(rating.userId);
+      return {
+        userId: rating.userId,
+        cookName: cookDisplayName(user?.name),
+        taste: rating.taste,
+        texture: rating.texture,
+        similarity: rating.similarity,
+        ease: rating.ease,
+        wouldMakeAgain: rating.wouldMakeAgain,
+        comment: rating.comment!,
+        updatedAt: rating.updatedAt,
+      };
+    }),
+  );
+  return reviews.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
 export async function upsertRating(input: {
   slug: string;
   userId: string;
@@ -78,7 +118,10 @@ export async function upsertRating(input: {
   visibility: "public" | "unlisted" | "private";
   taste: number;
   texture: number;
+  similarity: number;
+  ease: number;
   wouldMakeAgain: boolean;
+  comment?: string | null;
 }): Promise<{ rating: RecipeRating; summary: RatingSummary }> {
   if (input.visibility === "private") {
     throw new RatingError("not_rateable", "Private recipes are not part of the community shelf.");
@@ -90,13 +133,26 @@ export async function upsertRating(input: {
     );
   }
 
-  const parsed = ratingSchema.pick({ taste: true, texture: true, wouldMakeAgain: true }).safeParse({
-    taste: input.taste,
-    texture: input.texture,
-    wouldMakeAgain: input.wouldMakeAgain,
-  });
+  const parsed = z
+    .object({
+      taste: score,
+      texture: score,
+      similarity: score,
+      ease: score,
+      wouldMakeAgain: z.boolean(),
+    })
+    .safeParse({
+      taste: input.taste,
+      texture: input.texture,
+      similarity: input.similarity,
+      ease: input.ease,
+      wouldMakeAgain: input.wouldMakeAgain,
+    });
   if (!parsed.success) {
-    throw new RatingError("invalid_input", "Rate taste and texture from 1 to 5, then say if you would make it again.");
+    throw new RatingError(
+      "invalid_input",
+      "Rate taste, texture, similarity, and ease from 1 to 5, then say if you would make it again.",
+    );
   }
 
   const now = new Date().toISOString();
@@ -106,7 +162,10 @@ export async function upsertRating(input: {
     userId: input.userId,
     taste: parsed.data.taste,
     texture: parsed.data.texture,
+    similarity: parsed.data.similarity,
+    ease: parsed.data.ease,
     wouldMakeAgain: parsed.data.wouldMakeAgain,
+    comment: cleanComment(input.comment),
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };
