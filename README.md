@@ -4,13 +4,13 @@ Keep the flavor. Improve the recipe.
 
 Explore Cook Thrive takes a recipe you already love — pasted or imported from a URL — and looks for nutrition upgrades that respect flavor, texture, and technique. It is not a generic “healthy recipe generator.”
 
-This repository is in **Phase 7**: the conversion kitchen plus a quality pass. Paste or import a recipe, convert it, see USDA estimates, then sign in to publish, favorite, and collect. Public Thrive pages get sitemap, robots, and Recipe JSON-LD. Convert, kitchen, and account routes are `noindex`. Guests get 2 conversions; signed-in kitchens get 10 per UTC day. The language model never invents calorie numbers.
+This repository is in **Phase 8**: the conversion kitchen plus community cook notes. Paste or import a recipe, convert it, see USDA estimates, then sign in to publish, favorite, collect, and rate. Public Thrive pages get sitemap, robots, Recipe JSON-LD, and an optional Community Tested badge. Convert, kitchen, and account routes are `noindex`. Guests get 2 conversions; signed-in kitchens get 10 per UTC day. The language model never invents calorie numbers.
 
 Paste a recipe or a URL on the homepage. We structure it (JSON-LD first for URLs), you confirm the reading, then we convert it. Without `OPENAI_API_KEY`, conversions use a local culinary mock so the loop is still usable.
 
-Sign in with email and a password (Auth.js credentials). Publishing requires an account. History is at `/kitchen`, favorites at `/kitchen/favorites`, collections at `/kitchen/collections`. Guest conversions are claimed when you sign in. Accounts, favorites, and collections live in `.data/` alongside drafts and the library.
+Sign in with email and a password (Auth.js credentials). Publishing requires an account. History is at `/kitchen`, favorites at `/kitchen/favorites`, collections at `/kitchen/collections`. Guest conversions are claimed when you sign in. After you cook a public Thrive Version, rate taste and texture. **Community Tested** means at least three other kitchens scored both 4 or higher and would make it again. Accounts, favorites, collections, and ratings live in `.data/` alongside drafts and the library.
 
-Structured logs record job ids, extract codes, search result counts, and publish slugs. Recipe bodies, ingredients, instructions, and prompts are stripped before a line is written.
+Structured logs record job ids, extract codes, search result counts, publish slugs, and rating counts. Recipe bodies, ingredients, instructions, and prompts are stripped before a line is written.
 
 ## Run locally
 
@@ -24,7 +24,7 @@ npm run dev
 
 App: [http://localhost:43123](http://localhost:43123)
 
-Drafts, conversion jobs, published recipes, accounts, favorites, and collections currently live in `.data/` (gitignored). Postgres is reserved for later; the current loop does not require it.
+Drafts, conversion jobs, published recipes, accounts, favorites, collections, and cook ratings currently live in `.data/` (gitignored). Postgres is reserved for later; the current loop does not require it.
 
 ## Environment
 

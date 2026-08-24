@@ -5,11 +5,14 @@ import { ConvertNutrition } from "@/components/convert-nutrition";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DIETARY_COPY, GOAL_COPY, PREFERENCE_COPY } from "@/server/convert/schema";
+import { CommunityBadge } from "@/components/community-badge";
+import { RecipeRatingPanel } from "@/components/recipe-rating";
 import { RecipeSaveBar } from "@/components/recipe-save-bar";
 import { VisibilityControl } from "@/components/visibility-control";
 import { listCollections } from "@/server/accounts/collections";
 import { isFavorite } from "@/server/accounts/favorites";
 import { currentAccount } from "@/server/accounts/session";
+import { getRatingSummary, getUserRating } from "@/server/community/store";
 import { getVisibleBySlug } from "@/server/library/store";
 import { recipeJsonLd, shouldIndexRecipe } from "@/server/seo/jsonld";
 import { siteUrl } from "@/server/seo/site";
@@ -55,13 +58,15 @@ export default async function PublishedRecipePage({
   const favorited = account.userId ? await isFavorite(account.userId, recipe.slug) : false;
   const collections = account.userId ? await listCollections(account.userId) : [];
   const isOwner = Boolean(account.userId && recipe.ownerId === account.userId);
+  const community = await getRatingSummary(recipe.slug);
+  const mine = account.userId ? await getUserRating(recipe.slug, account.userId) : null;
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-12 sm:px-6">
       {recipe.visibility === "public" ? (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(recipeJsonLd(recipe)) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(recipeJsonLd(recipe, community)) }}
         />
       ) : null}
       <p className="text-sm font-semibold tracking-[0.18em] text-terracotta uppercase">
@@ -86,6 +91,7 @@ export default async function PublishedRecipePage({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
+        <CommunityBadge summary={community} />
         <Badge variant="secondary">
           {recipe.visibility === "public" ? "Published" : recipe.visibility === "unlisted" ? "Unlisted" : "Private"}
         </Badge>
@@ -118,6 +124,15 @@ export default async function PublishedRecipePage({
         signedIn={Boolean(account.userId)}
         favorited={favorited}
         collections={collections}
+      />
+
+      <RecipeRatingPanel
+        slug={recipe.slug}
+        signedIn={Boolean(account.userId)}
+        isOwner={isOwner}
+        isPublic={recipe.visibility === "public"}
+        summary={community}
+        mine={mine}
       />
 
       {recipe.nutrition ? <ConvertNutrition nutrition={recipe.nutrition} /> : null}

@@ -1,3 +1,4 @@
+import type { RatingSummary } from "@/server/community/policy";
 import type { PublishedRecipe } from "@/server/library/schema";
 import { siteUrl } from "./site";
 
@@ -5,7 +6,7 @@ export function shouldIndexRecipe(recipe: Pick<PublishedRecipe, "visibility">) {
   return recipe.visibility === "public";
 }
 
-export function recipeJsonLd(recipe: PublishedRecipe) {
+export function recipeJsonLd(recipe: PublishedRecipe, ratings?: RatingSummary | null) {
   const url = `${siteUrl()}/recipes/${recipe.slug}`;
   const nutrition = recipe.nutrition?.thrive.perServing ?? recipe.nutrition?.thrive.totals;
   return {
@@ -37,5 +38,15 @@ export function recipeJsonLd(recipe: PublishedRecipe) {
           sodiumContent: `${Math.round(nutrition.sodiumMg)} mg`,
         }
       : undefined,
+    aggregateRating:
+      ratings && ratings.count > 0 && ratings.overallAverage != null
+        ? {
+            "@type": "AggregateRating",
+            ratingValue: ratings.overallAverage.toFixed(1),
+            ratingCount: ratings.count,
+            bestRating: "5",
+            worstRating: "1",
+          }
+        : undefined,
   };
 }

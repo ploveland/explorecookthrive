@@ -1,9 +1,16 @@
 import Link from "next/link";
 import { RecipeCard } from "@/components/recipe-card";
+import { getRatingSummaries } from "@/server/community/store";
 import { listPublished } from "@/server/library/store";
 import type { PublishedRecipe } from "@/server/library/schema";
 
 const RAILS = [
+  {
+    title: "Community Tested",
+    tag: "community-tested",
+    empty:
+      "Cook a published Thrive Version, then rate taste and texture. Three kitchens at 4 or higher who would make it again earn this badge.",
+  },
   {
     title: "Recently Thrived",
     tag: null,
@@ -36,13 +43,26 @@ const RAILS = [
   },
 ] as const;
 
-function pick(recipes: PublishedRecipe[], tag: string | null) {
+function pick(
+  recipes: PublishedRecipe[],
+  tag: string | null,
+  testedSlugs: Set<string>,
+) {
+  if (tag === "community-tested") {
+    return recipes.filter((recipe) => testedSlugs.has(recipe.slug)).slice(0, 3);
+  }
   const filtered = tag ? recipes.filter((recipe) => recipe.tags.includes(tag)) : recipes;
   return filtered.slice(0, 3);
 }
 
 export async function DiscoveryRails() {
   const recipes = await listPublished();
+  const summaries = await getRatingSummaries(recipes.map((recipe) => recipe.slug));
+  const testedSlugs = new Set(
+    Object.values(summaries)
+      .filter((summary) => summary.communityTested)
+      .map((summary) => summary.slug),
+  );
 
   return (
     <section aria-labelledby="discover-heading" className="space-y-6">
@@ -62,7 +82,7 @@ export async function DiscoveryRails() {
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {RAILS.map((rail) => {
-          const items = pick(recipes, rail.tag);
+          const items = pick(recipes, rail.tag, testedSlugs);
           return (
             <article
               key={rail.title}
@@ -93,7 +113,7 @@ export async function DiscoveryRails() {
         <div className="pt-2">
           <p className="mb-3 text-sm font-medium text-teal/70">Latest publish</p>
           <div className="max-w-md">
-            <RecipeCard recipe={recipes[0]} />
+            <RecipeCard recipe={recipes[0]} community={summaries[recipes[0].slug]} />
           </div>
         </div>
       ) : null}

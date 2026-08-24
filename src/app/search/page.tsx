@@ -1,6 +1,7 @@
 import { RecipeCard } from "@/components/recipe-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { getRatingSummaries } from "@/server/community/store";
 import { listPublished } from "@/server/library/store";
 import { log } from "@/server/log";
 
@@ -14,6 +15,7 @@ export default async function SearchPage({
   const { q } = await searchParams;
   const query = q?.trim() ?? "";
   const recipes = query ? await listPublished({ query }) : [];
+  const summaries = await getRatingSummaries(recipes.map((recipe) => recipe.slug));
   if (query) {
     log.info("search.results", {
       queryLength: query.length,
@@ -58,7 +60,7 @@ export default async function SearchPage({
             {recipes.length} {recipes.length === 1 ? "recipe" : "recipes"}
           </p>
           {recipes.map((recipe) => (
-            <RecipeCard key={recipe.id} recipe={recipe} />
+            <RecipeCard key={recipe.id} recipe={recipe} community={summaries[recipe.slug]} />
           ))}
         </div>
       )}

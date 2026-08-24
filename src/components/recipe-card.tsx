@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { CommunityBadge } from "@/components/community-badge";
+import type { RatingSummary } from "@/server/community/policy";
 import type { PublishedRecipe } from "@/server/library/schema";
 import { TAXONOMY_TAGS } from "@/server/taxonomy/tags";
 
@@ -7,7 +9,13 @@ function tagLabel(slug: string) {
   return TAXONOMY_TAGS.find((tag) => tag.slug === slug)?.name ?? slug;
 }
 
-export function RecipeCard({ recipe }: { recipe: PublishedRecipe }) {
+export function RecipeCard({
+  recipe,
+  community,
+}: {
+  recipe: PublishedRecipe;
+  community?: RatingSummary;
+}) {
   const shown = recipe.tags.slice(0, 3);
 
   return (
@@ -19,6 +27,11 @@ export function RecipeCard({ recipe }: { recipe: PublishedRecipe }) {
         aria-hidden
         className="mb-4 h-28 rounded-xl bg-[linear-gradient(135deg,#8DA78A_0%,#3D5A80_55%,#E07A5F_120%)] opacity-90"
       />
+      {community?.communityTested ? (
+        <div className="mb-2">
+          <CommunityBadge summary={community} />
+        </div>
+      ) : null}
       <h3 className="font-heading text-xl text-teal group-hover:text-terracotta-strong">
         {recipe.title}
       </h3>

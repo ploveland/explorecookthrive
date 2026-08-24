@@ -57,4 +57,23 @@ describe("recipe SEO", () => {
       sodiumContent: "620 mg",
     });
   });
+
+  it("adds aggregateRating from cook scores without inventing them", () => {
+    const json = recipeJsonLd(recipe, {
+      slug: recipe.slug,
+      count: 3,
+      tasteAverage: 4.3,
+      textureAverage: 4.3,
+      overallAverage: 4.3,
+      wouldMakeAgainCount: 3,
+      wouldMakeAgainRatio: 1,
+      communityTested: true,
+    });
+    expect(json.aggregateRating).toMatchObject({
+      "@type": "AggregateRating",
+      ratingValue: "4.3",
+      ratingCount: 3,
+    });
+    expect(recipeJsonLd(recipe).aggregateRating).toBeUndefined();
+  });
 });
