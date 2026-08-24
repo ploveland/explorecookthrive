@@ -58,7 +58,9 @@ The live kitchen needs a **persistent disk**. Render’s free web service cannot
 
 1. Push this repo to GitHub (`git push github main`).
 2. In [Render](https://dashboard.render.com), open **New → Blueprint** and connect `ploveland/explorecookthrive` (or your fork). Render reads `render.yaml`.
-3. Deploy. The first ship uses the culinary mock and local USDA catalog. Add `OPENAI_API_KEY` (and optionally `USDA_FDC_API_KEY`) under **Environment** when you want live conversions.
+3. Deploy. The public URL looks like `https://explore-cook-thrive.onrender.com`. Auth and sitemap use Render’s `RENDER_EXTERNAL_URL` until you set `APP_URL` and `AUTH_URL`.
+4. The first ship uses the culinary mock and local USDA catalog. Add `OPENAI_API_KEY` (and optionally `USDA_FDC_API_KEY`) under **Environment** when you want live conversions.
+5. Optional: add a custom domain, then set both `APP_URL` and `AUTH_URL` to `https://your-domain.com` (no trailing slash).
 
 Kitchens, published recipes, and ratings persist on the `ect-data` disk across deploys. Take your own backups; a disk is not a database dump.
 
