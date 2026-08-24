@@ -9,7 +9,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-lato), ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-playfair), ui-serif, Georgia, serif;
-  --color-cream: #fdfcdc;
+  --color-cream: #fcf5e9;
   --color-sage: #8da78a;
   --color-teal: #3d5a80;
   --color-terracotta: #e07a5f;
@@ -54,23 +54,23 @@
 }
 
 :root {
-  --background: #fdfcdc;
+  --background: #fcf5e9;
   --foreground: #1c2e3a;
-  --card: #fffef4;
+  --card: #fffaf2;
   --card-foreground: #1c2e3a;
-  --popover: #fffef4;
+  --popover: #fffaf2;
   --popover-foreground: #1c2e3a;
   --primary: #a84b36;
-  --primary-foreground: #fdfcdc;
+  --primary-foreground: #fcf5e9;
   --secondary: #e3ece2;
   --secondary-foreground: #1c2e3a;
-  --muted: #f3f0d8;
+  --muted: #f3e6d2;
   --muted-foreground: #3d5a80;
   --accent: #e3ece2;
   --accent-foreground: #1c2e3a;
   --destructive: #9c2f2f;
-  --border: #d5d2b8;
-  --input: #d5d2b8;
+  --border: #e4d5c2;
+  --input: #e4d5c2;
   --ring: #3d5a80;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);

@@ -14,7 +14,7 @@ export default function HomePage() {
             <img
               src="/brand/logo.svg"
               alt="Explore Cook Thrive — Love your food. Nourish your life."
-              className="mb-6 h-40 w-auto max-w-[220px] sm:h-52"
+              className="mb-6 h-44 w-auto max-w-[240px] sm:h-56"
             />
             <p className="text-sm font-semibold tracking-[0.18em] text-terracotta uppercase">
               Keep the flavor. Improve the recipe.
