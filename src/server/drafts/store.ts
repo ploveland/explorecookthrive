@@ -13,7 +13,7 @@ function fileFor(id: string) {
   return path.join(DIR, `${id}.json`);
 }
 
-export async function saveDraft(recipe: ExtractedRecipe, id = randomUUID()): Promise<RecipeDraft> {
+export async function saveDraft(recipe: ExtractedRecipe, id: string = randomUUID()): Promise<RecipeDraft> {
   await ensureDir();
   const now = new Date().toISOString();
   const draft: RecipeDraft = {
