@@ -44,7 +44,7 @@ Drafts, conversion jobs, published recipes, accounts, favorites, collections, an
 
 Unsplash is not used. GitHub/Google login is not wired yet — email and password is the local account.
 
-Public crawl surfaces: `/`, `/recipes`, `/search`, and public `/recipes/[slug]`. `/convert`, `/kitchen`, `/signin`, `/signup`, `/forgot-password`, `/reset-password`, and `/api` are disallowed in `robots.txt`. Unlisted and private recipes are `noindex` and stay off the sitemap.
+Public crawl surfaces: `/`, `/recipes`, `/search`, `/contact`, and public `/recipes/[slug]`. `/convert`, `/kitchen`, `/signin`, `/signup`, `/forgot-password`, `/reset-password`, and `/api` are disallowed in `robots.txt`. Unlisted and private recipes are `noindex` and stay off the sitemap.
 
 ## Scripts
 

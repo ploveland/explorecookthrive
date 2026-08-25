@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CONTACT_EMAIL, CONTACT_MAILTO } from "@/lib/contact";
 
 export function SiteFooter() {
   return (
@@ -25,6 +26,12 @@ export function SiteFooter() {
           <Link className="underline-offset-4 hover:underline" href="/signin">
             Sign in
           </Link>
+          <Link className="underline-offset-4 hover:underline" href="/contact">
+            Contact
+          </Link>
+          <a className="underline-offset-4 hover:underline" href={CONTACT_MAILTO}>
+            {CONTACT_EMAIL}
+          </a>
           <p className="text-cream/70">Nutrition figures will always be estimates.</p>
         </div>
       </div>
