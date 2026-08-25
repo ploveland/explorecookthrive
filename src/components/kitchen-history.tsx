@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { KitchenComparePicker } from "@/components/kitchen-compare-picker";
 import { Button } from "@/components/ui/button";
 import type { ConversionJob } from "@/server/convert/schema";
-import { choiceLine, groupJobsByOriginal, versionNumberFor } from "@/server/convert/versions";
+import { completeVersions, choiceLine, groupJobsByOriginal, versionNumberFor } from "@/server/convert/versions";
 
 function versionTitle(job: ConversionJob, number: number | null) {
   const label = number ? `Version ${number}` : job.statusLabel;
@@ -78,6 +79,7 @@ export function KitchenHistory({
                 Thrive again
               </Button>
             ) : null}
+            <KitchenComparePicker versions={completeVersions(group.jobs)} />
           </li>
         );
       })}

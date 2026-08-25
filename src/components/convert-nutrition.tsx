@@ -1,45 +1,12 @@
-import type { NutrientTotals, NutritionComparison, NutritionConfidence } from "@/server/nutrition/schema";
-
-const ROWS: { key: keyof NutrientTotals; label: string; suffix: string; invert: boolean }[] = [
-  { key: "calories", label: "Calories", suffix: "", invert: true },
-  { key: "proteinG", label: "Protein", suffix: "g", invert: false },
-  { key: "fiberG", label: "Fiber", suffix: "g", invert: false },
-  { key: "fatG", label: "Fat", suffix: "g", invert: true },
-  { key: "saturatedFatG", label: "Saturated fat", suffix: "g", invert: true },
-  { key: "carbsG", label: "Carbs", suffix: "g", invert: true },
-  { key: "sugarG", label: "Sugar", suffix: "g", invert: true },
-  { key: "sodiumMg", label: "Sodium", suffix: "mg", invert: true },
-];
-
-function formatValue(key: keyof NutrientTotals, value: number) {
-  if (key === "calories" || key === "sodiumMg") return `${Math.round(value)}`;
-  const rounded = Math.round(value * 10) / 10;
-  return Number.isInteger(rounded) ? `${rounded}` : rounded.toFixed(1);
-}
-
-function formatDelta(key: keyof NutrientTotals, value: number) {
-  const abs = formatValue(key, Math.abs(value));
-  if (Math.abs(value) < 0.05) return "0";
-  return `${value > 0 ? "+" : "−"}${abs}`;
-}
-
-function confidenceCopy(confidence: NutritionConfidence) {
-  if (confidence === "high") return "Most ingredients matched USDA foods with measured amounts.";
-  if (confidence === "medium") return "Some amounts used typical kitchen weights, like a medium onion or a can.";
-  return "Several ingredients could not be matched or had no amount, so treat this as a rough sketch.";
-}
-
-function deltaClass(key: keyof NutrientTotals, value: number, invert: boolean) {
-  if (Math.abs(value) < 0.05) return "text-teal/70";
-  const improved = invert ? value < 0 : value > 0;
-  return improved ? "text-teal" : "text-terracotta-strong";
-}
-
-function deltaTone(value: number, invert: boolean) {
-  if (Math.abs(value) < 0.05) return "same";
-  const improved = invert ? value < 0 : value > 0;
-  return improved ? "improved" : "not an improvement";
-}
+import type { NutritionComparison } from "@/server/nutrition/schema";
+import {
+  NUTRIENT_ROWS,
+  confidenceCopy,
+  formatNutrientDelta,
+  formatNutrientValue,
+  nutrientDeltaClass,
+  nutrientDeltaTone,
+} from "@/server/nutrition/display";
 
 export function ConvertNutrition({ nutrition }: { nutrition: NutritionComparison }) {
   const original = nutrition.original.perServing ?? nutrition.original.totals;
@@ -82,30 +49,30 @@ export function ConvertNutrition({ nutrition }: { nutrition: NutritionComparison
             </tr>
           </thead>
           <tbody>
-            {ROWS.map((row) => {
+            {NUTRIENT_ROWS.map((row) => {
               const change = delta?.[row.key] ?? thrive[row.key] - original[row.key];
               return (
                 <tr key={row.key} className="border-b border-teal/5">
                   <td className="py-2.5 pr-3 text-teal">{row.label}</td>
                   <td className="py-2.5 pr-3 tabular-nums text-teal/80">
-                    {formatValue(row.key, original[row.key])}
+                    {formatNutrientValue(row.key, original[row.key])}
                     {row.suffix}
                   </td>
                   <td className="py-2.5 pr-3 tabular-nums font-medium text-teal">
-                    {formatValue(row.key, thrive[row.key])}
+                    {formatNutrientValue(row.key, thrive[row.key])}
                     {row.suffix}
                   </td>
-                  <td className={`py-2.5 tabular-nums font-medium ${deltaClass(row.key, change, row.invert)}`}>
+                  <td className={`py-2.5 tabular-nums font-medium ${nutrientDeltaClass(change, row.invert)}`}>
                     <span className="sr-only">
-                      {row.label} {formatDelta(row.key, change)}
-                      {row.suffix}, {deltaTone(change, row.invert)}
+                      {row.label} {formatNutrientDelta(row.key, change)}
+                      {row.suffix}, {nutrientDeltaTone(change, row.invert)}
                     </span>
                     <span aria-hidden>
-                      {formatDelta(row.key, change)}
+                      {formatNutrientDelta(row.key, change)}
                       {row.suffix}
                       {Math.abs(change) >= 0.05 ? (
                         <span className="ml-1 text-xs font-normal">
-                          {deltaTone(change, row.invert) === "improved" ? "better" : "not better"}
+                          {nutrientDeltaTone(change, row.invert) === "improved" ? "better" : "not better"}
                         </span>
                       ) : null}
                     </span>

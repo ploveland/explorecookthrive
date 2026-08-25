@@ -11,6 +11,7 @@ import {
   PREFERENCE_COPY,
   type ConversionJob,
 } from "@/server/convert/schema";
+import { compareHref } from "@/lib/compare-href";
 import type { ThriveVersionSummary } from "@/server/convert/versions";
 import type { ExtractedRecipe } from "@/server/recipes/schema";
 
@@ -172,13 +173,24 @@ export function ConvertResult({
                   Version {version.versionNumber} · {version.title}
                 </p>
                 <p className="mt-1 text-sm text-teal/70">{version.choices}</p>
-                <Button
-                  render={<Link href={`/convert/result/${version.id}`} />}
-                  variant="outline"
-                  className="mt-3"
-                >
-                  Open
-                </Button>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    render={<Link href={`/convert/result/${version.id}`} />}
+                    variant="outline"
+                  >
+                    Open
+                  </Button>
+                  {versionNumber ? (
+                    <Button
+                      render={
+                        <Link href={compareHref(job.id, version.id, versionNumber, version.versionNumber)} />
+                      }
+                      variant="outline"
+                    >
+                      Compare
+                    </Button>
+                  ) : null}
+                </div>
               </li>
             ))}
           </ul>
