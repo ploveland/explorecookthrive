@@ -3,6 +3,7 @@ import type { ConversionOutput } from "@/server/ai/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConvertNutrition } from "@/components/convert-nutrition";
+import { JumpToRecipe } from "@/components/jump-to-recipe";
 import { PublishThriveForm } from "@/components/publish-thrive-form";
 import { ScaledRecipe } from "@/components/scaled-recipe";
 import {
@@ -52,24 +53,27 @@ export function ConvertResult({
 
   return (
     <div className="space-y-10">
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge variant={publishedSlug ? "outline" : "secondary"}>
-          {publishedSlug ? "Published" : "Private"}
-        </Badge>
-        {versionNumber ? (
-          <Badge variant="outline">Version {versionNumber}</Badge>
-        ) : null}
-        <Badge variant="outline">{PREFERENCE_COPY[job.preference].label}</Badge>
-        {job.goals.map((goal) => (
-          <Badge key={goal} variant="outline">
-            {GOAL_COPY[goal].label}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant={publishedSlug ? "outline" : "secondary"}>
+            {publishedSlug ? "Published" : "Private"}
           </Badge>
-        ))}
-        {job.dietary.map((item) => (
-          <Badge key={item} variant="outline">
-            {DIETARY_COPY[item].label}
-          </Badge>
-        ))}
+          {versionNumber ? (
+            <Badge variant="outline">Version {versionNumber}</Badge>
+          ) : null}
+          <Badge variant="outline">{PREFERENCE_COPY[job.preference].label}</Badge>
+          {job.goals.map((goal) => (
+            <Badge key={goal} variant="outline">
+              {GOAL_COPY[goal].label}
+            </Badge>
+          ))}
+          {job.dietary.map((item) => (
+            <Badge key={item} variant="outline">
+              {DIETARY_COPY[item].label}
+            </Badge>
+          ))}
+        </div>
+        <JumpToRecipe />
       </div>
 
       {job.provider === "mock" ? (
@@ -125,7 +129,7 @@ export function ConvertResult({
             ))}
           </ol>
         </div>
-        <div className="rounded-3xl bg-white p-5 ring-1 ring-terracotta/30">
+        <div id="recipe" className="scroll-mt-28 rounded-3xl bg-white p-5 ring-1 ring-terracotta/30">
           <p className="text-xs font-semibold tracking-[0.16em] text-terracotta uppercase">
             Thrive Version
           </p>

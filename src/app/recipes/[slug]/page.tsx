@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DIETARY_COPY, GOAL_COPY, PREFERENCE_COPY } from "@/server/convert/schema";
 import { CommunityBadge } from "@/components/community-badge";
+import { JumpToRecipe } from "@/components/jump-to-recipe";
 import { RecipeRatingPanel } from "@/components/recipe-rating";
 import { RecipeSaveBar } from "@/components/recipe-save-bar";
 import { ScaledRecipe } from "@/components/scaled-recipe";
@@ -77,6 +78,7 @@ export default async function PublishedRecipePage({
       <div className="space-y-3">
         <h1 className="font-heading text-4xl text-teal">{recipe.title}</h1>
         <p className="max-w-3xl text-lg leading-8 text-teal/80">{recipe.description}</p>
+        <JumpToRecipe />
         <p className="text-sm text-teal/70">
           Based on {recipe.originalTitle}
           {recipe.sourceAuthor ? ` by ${recipe.sourceAuthor}` : ""}
@@ -171,7 +173,7 @@ export default async function PublishedRecipePage({
         </ul>
       </section>
 
-      <section className="rounded-3xl bg-white p-5 ring-1 ring-terracotta/30">
+      <section id="recipe" className="scroll-mt-28 rounded-3xl bg-white p-5 ring-1 ring-terracotta/30">
         <p className="text-xs font-semibold tracking-[0.16em] text-terracotta uppercase">
           Thrive Version
         </p>
