@@ -8,7 +8,10 @@ services:
     runtime: node
     plan: starter
     region: oregon
-    buildCommand: npm ci && npm run build
+    # NODE_ENV=production would skip Tailwind/TypeScript if they stayed in
+    # devDependencies. Keep --include=dev so `next build` still has them if
+    # a package drifts back into that section.
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm run start
     healthCheckPath: /
     envVars:

@@ -64,6 +64,8 @@ The live kitchen needs a **persistent disk**. Render’s free web service cannot
 
 Kitchens, published recipes, and ratings persist on the `ect-data` disk across deploys. Take your own backups; a disk is not a database dump.
 
+Render sets `NODE_ENV=production` for the whole service. That would skip `devDependencies` during `npm ci`, which is why Tailwind, TypeScript, and the Prisma CLI live in `dependencies` and the Blueprint installs with `--include=dev`.
+
 If `next build` runs out of memory, raise the instance size and redeploy.
 
 ## Eval suite
