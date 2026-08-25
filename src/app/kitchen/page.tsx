@@ -59,6 +59,11 @@ export default async function KitchenPage() {
                         Check progress
                       </Button>
                     )}
+                    {job.status === "complete" || job.status === "failed" ? (
+                      <Button render={<Link href={`/convert/again/${job.id}`} />} variant="outline">
+                        Thrive again
+                      </Button>
+                    ) : null}
                     {published ? (
                       <Button render={<Link href={`/recipes/${published.slug}`} />} className="bg-teal text-cream">
                         Public page

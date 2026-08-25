@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { rm } from "node:fs/promises";
 import path from "node:path";
 import { saveDraft } from "../drafts/store";
-import { createJob, getJob, processJob, JobError } from "./jobs";
+import { createJob, ensureDraftFromJob, getJob, processJob, JobError } from "./jobs";
 
 const sampleRecipe = {
   title: "Weeknight chili",
@@ -55,6 +55,7 @@ const sampleRecipe = {
 
 afterEach(async () => {
   await rm(path.join(process.cwd(), ".data", "jobs"), { recursive: true, force: true });
+  await rm(path.join(process.cwd(), ".data", "drafts"), { recursive: true, force: true });
 });
 
 describe("conversion jobs", () => {
@@ -67,6 +68,10 @@ describe("conversion jobs", () => {
         dietary: [],
       }),
     ).rejects.toBeInstanceOf(JobError);
+  });
+
+  it("refuses to restore a conversion that is not there", async () => {
+    await expect(ensureDraftFromJob("missing")).rejects.toMatchObject({ code: "job_not_found" });
   });
 
   it("runs a mock conversion through to a private result", async () => {
@@ -95,5 +100,39 @@ describe("conversion jobs", () => {
 
     const stored = await getJob(job.id);
     expect(stored?.status).toBe("complete");
+  });
+
+  it("restores a missing draft so the cook can thrive again with new goals", async () => {
+    process.env.CONVERT_STAGE_DELAY_MS = "0";
+    delete process.env.OPENAI_API_KEY;
+    const draft = await saveDraft(sampleRecipe);
+    const first = await createJob({
+      draftId: draft.id,
+      goals: ["higher_protein", "more_fiber"],
+      preference: "balanced",
+      dietary: [],
+    });
+    await processJob(first.id);
+    await rm(path.join(process.cwd(), ".data", "drafts", `${draft.id}.json`), { force: true });
+
+    const restored = await ensureDraftFromJob(first.id);
+    expect(restored.draft.id).toBe(first.draftId);
+    expect(restored.draft.recipe.title).toBe("Weeknight chili");
+    expect(restored.job.goals).toEqual(["higher_protein", "more_fiber"]);
+
+    const second = await createJob({
+      draftId: restored.draft.id,
+      goals: ["lower_calories"],
+      preference: "preserve",
+      dietary: ["gluten_free"],
+    });
+    expect(second.id).not.toBe(first.id);
+    expect(second.goals).toEqual(["lower_calories"]);
+    expect(second.preference).toBe("preserve");
+    expect(second.dietary).toEqual(["gluten_free"]);
+
+    const done = await processJob(second.id);
+    expect(done?.status).toBe("complete");
+    expect(done?.output?.thriveVersion.ingredients.length).toBeGreaterThan(0);
   });
 });

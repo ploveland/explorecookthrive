@@ -19,14 +19,24 @@ import {
 export function ConvertGoalsForm({
   draftId,
   recipeTitle,
+  initialGoals = ["healthier_overall"],
+  initialPreference = "balanced",
+  initialDietary = [],
+  again = false,
+  fromJobId = null,
 }: {
   draftId: string;
   recipeTitle: string;
+  initialGoals?: NutritionGoalId[];
+  initialPreference?: TastePreferenceId;
+  initialDietary?: DietaryRequirementId[];
+  again?: boolean;
+  fromJobId?: string | null;
 }) {
   const router = useRouter();
-  const [goals, setGoals] = useState<NutritionGoalId[]>(["healthier_overall"]);
-  const [preference, setPreference] = useState<TastePreferenceId>("balanced");
-  const [dietary, setDietary] = useState<DietaryRequirementId[]>([]);
+  const [goals, setGoals] = useState<NutritionGoalId[]>(initialGoals);
+  const [preference, setPreference] = useState<TastePreferenceId>(initialPreference);
+  const [dietary, setDietary] = useState<DietaryRequirementId[]>(initialDietary);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -64,7 +74,10 @@ export function ConvertGoalsForm({
       } | null;
       if (!response.ok || !payload?.jobId) {
         if (response.status === 403 && payload?.code === "sign_in_required") {
-          router.push(`/signin?reason=limit&next=${encodeURIComponent(`/convert/goals/${draftId}`)}`);
+          const next = fromJobId
+            ? `/convert/again/${fromJobId}`
+            : `/convert/goals/${draftId}`;
+          router.push(`/signin?reason=limit&next=${encodeURIComponent(next)}`);
           return;
         }
         setError(payload?.message ?? "We could not start that conversion.");
@@ -181,7 +194,7 @@ export function ConvertGoalsForm({
           disabled={pending}
           className="h-11 bg-terracotta-strong px-6 text-cream"
         >
-          {pending ? "Starting…" : "Thrive this recipe"}
+          {pending ? "Starting…" : again ? "Thrive again" : "Thrive this recipe"}
         </Button>
         <Button
           type="button"

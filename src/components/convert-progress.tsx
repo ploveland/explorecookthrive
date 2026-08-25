@@ -92,13 +92,22 @@ export function ConvertProgress({ jobId }: { jobId: string }) {
           <p role="alert" className="text-sm font-medium text-destructive">
             {error}
           </p>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.push("/#thrive")}
-          >
-            Start over
-          </Button>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push(`/convert/again/${jobId}`)}
+            >
+              Change choices and thrive again
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push("/#thrive")}
+            >
+              Start over
+            </Button>
+          </div>
         </div>
       ) : (
         <p className="text-sm text-teal/70">Stay here — we will open the Thrive Version when it is ready.</p>

@@ -149,12 +149,13 @@ export function ConvertResult({
       />
 
       <p className="text-sm text-teal/70">
-        Taste impact: {output.analysis.tasteImpact}.
+        Taste impact: {output.analysis.tasteImpact}. Not the result you wanted? Change the goals
+        and thrive this original again.
       </p>
 
       <div className="flex flex-wrap gap-3">
-        <Button render={<Link href={`/convert/goals/${job.draftId}`} />} variant="outline">
-          Try different goals
+        <Button render={<Link href={`/convert/again/${job.id}`} />} variant="outline">
+          Change choices and thrive again
         </Button>
         <Button render={<Link href="/#thrive" />} className="bg-terracotta-strong text-cream">
           Thrive another recipe

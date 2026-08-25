@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { getDraft } from "../drafts/store";
+import { saveDraft, getDraft } from "../drafts/store";
 import { log } from "../log";
 import { compareRecipeNutrition, type NutritionIngredientInput } from "../nutrition/estimate";
 import { inputFromExtractedRecipe } from "./from-recipe";
@@ -141,6 +141,15 @@ export async function createJob(input: {
     createdAt: now,
     updatedAt: now,
   });
+}
+
+export async function ensureDraftFromJob(jobId: string) {
+  const job = await getJob(jobId);
+  if (!job) {
+    throw new JobError("job_not_found", "We could not find that conversion.");
+  }
+  const draft = await saveDraft(job.recipe, job.draftId);
+  return { job, draft };
 }
 
 async function setStatus(id: string, status: ConversionJobStatus, statusLabel: string) {
