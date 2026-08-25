@@ -10,6 +10,7 @@ import type { PublicReview, RecipeRating, RatingSummary } from "@/server/communi
 import { COMMENT_MAX_LENGTH, COMMUNITY_TESTED_MIN_RATINGS } from "@/server/community/policy";
 import { CONTACT_EMAIL, CONTACT_MAILTO } from "@/lib/contact";
 import { COMMENT_REJECTED_MESSAGE } from "@/server/community/moderate";
+import { cn } from "@/lib/utils";
 
 const TASTE_COPY = {
   legend: "Taste — did it still taste like the dish?",
