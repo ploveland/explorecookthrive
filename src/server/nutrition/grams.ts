@@ -1,4 +1,5 @@
 import type { CatalogFood } from "./catalog";
+import { weightFromRawText } from "../recipes/parse-ingredient";
 
 
 const G_PER_OZ = 28.3495;
@@ -54,15 +55,43 @@ const UNIT_ALIASES: Record<string, string> = {
   heads: "head",
   piece: "piece",
   pieces: "piece",
-  whole: "piece",
   package: "package",
   packages: "package",
   pkg: "package",
+  pkgs: "package",
   pint: "pint",
   pints: "pint",
   quart: "quart",
   quarts: "quart",
+  gallon: "gallon",
+  gallons: "gallon",
+  tbs: "tbsp",
 };
+
+const CONVERTIBLE_UNITS = new Set([
+  "g",
+  "kg",
+  "oz",
+  "lb",
+  "ml",
+  "l",
+  "pint",
+  "quart",
+  "gallon",
+  "cup",
+  "tbsp",
+  "tsp",
+  "pinch",
+  "dash",
+  "stick",
+  "clove",
+  "can",
+  "slice",
+  "bunch",
+  "head",
+  "piece",
+  "package",
+]);
 
 export function canonicalUnit(unit: string | null | undefined): string | null {
   if (!unit) return null;
@@ -70,7 +99,45 @@ export function canonicalUnit(unit: string | null | undefined): string | null {
   return UNIT_ALIASES[key] ?? key;
 }
 
+export function isConvertibleUnit(unit: string | null | undefined): boolean {
+  const canonical = canonicalUnit(unit);
+  return Boolean(canonical && CONVERTIBLE_UNITS.has(canonical));
+}
+
 export function toGrams(
+  quantity: number | null,
+  unit: string | null | undefined,
+  food: CatalogFood | null,
+  rawText?: string,
+): { grams: number | null; assumed: boolean; note: string | null } {
+  const direct = convertToGrams(quantity, unit, food);
+  if (direct.grams != null) return direct;
+
+  const fromRaw = rawText ? weightFromRawText(rawText) : null;
+  if (fromRaw) {
+    const converted = convertToGrams(fromRaw.quantity, fromRaw.unit, food);
+    if (converted.grams != null) {
+      return {
+        ...converted,
+        assumed: true,
+        note: converted.note ?? `Used ${fromRaw.quantity} ${fromRaw.unit} from the ingredient line.`,
+      };
+    }
+  }
+
+  if (food && rawText && /\bcan(?:ned|s)?\b/i.test(rawText) && food.canGrams) {
+    const count = quantity && quantity > 0 ? quantity : 1;
+    return {
+      grams: food.canGrams * count,
+      assumed: true,
+      note: `A can is counted as ${food.canGrams}g of ${food.description.toLowerCase()}.`,
+    };
+  }
+
+  return direct;
+}
+
+function convertToGrams(
   quantity: number | null,
   unit: string | null | undefined,
   food: CatalogFood | null,
@@ -108,6 +175,7 @@ export function toGrams(
   if (canonical === "l") return { grams: quantity * 1000 * density, assumed: !food?.densityGPerMl, note: null };
   if (canonical === "pint") return { grams: quantity * 473.176 * density, assumed: true, note: null };
   if (canonical === "quart") return { grams: quantity * 946.353 * density, assumed: true, note: null };
+  if (canonical === "gallon") return { grams: quantity * 3785.41 * density, assumed: true, note: null };
 
   if (canonical === "cup") {
     const cup = food?.cupGrams ?? 240 * density;
@@ -177,6 +245,14 @@ export function toGrams(
     if (canonical === "package" && food?.canGrams) {
       return { grams: quantity * food.canGrams, assumed: true, note: `A package is counted as ${food.canGrams}g.` };
     }
+  }
+
+  if (food?.pieceGrams && !CONVERTIBLE_UNITS.has(canonical)) {
+    return {
+      grams: food.pieceGrams * quantity,
+      assumed: true,
+      note: `Used a typical piece weight of ${food.pieceGrams}g for ${food.description.toLowerCase()}.`,
+    };
   }
 
   return { grams: null, assumed: false, note: `Could not convert unit “${unit}”.` };

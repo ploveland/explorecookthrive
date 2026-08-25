@@ -1,6 +1,7 @@
 import { shouldIgnoreIngredient } from "./catalog";
 import { resolveFood, hasLiveFdc } from "./fdc";
-import { toGrams } from "./grams";
+import { toGrams, isConvertibleUnit } from "./grams";
+import { parseIngredientLine } from "../recipes/parse-ingredient";
 import {
   addNutrients,
   emptyNutrients,
@@ -33,7 +34,10 @@ function per100gToAmount(per100g: NutrientTotals, grams: number): NutrientTotals
 }
 
 async function estimateIngredient(item: NutritionIngredientInput): Promise<IngredientNutrition> {
-  const label = item.name?.trim() || item.rawText;
+  const parsed = parseIngredientLine(item.rawText);
+  const quantity = parsed.quantity ?? item.quantity;
+  const unit = parsed.unit ?? (isConvertibleUnit(item.unit) ? item.unit : null);
+  const label = parsed.name?.trim() || item.name?.trim() || item.rawText;
   if (shouldIgnoreIngredient(label) || shouldIgnoreIngredient(item.rawText)) {
     return {
       rawText: item.rawText,
@@ -46,7 +50,10 @@ async function estimateIngredient(item: NutritionIngredientInput): Promise<Ingre
     };
   }
 
-  const food = await resolveFood(label);
+  const food =
+    (await resolveFood(label)) ??
+    (parsed.name ? await resolveFood(parsed.name) : null) ??
+    (await resolveFood(item.rawText));
   if (!food) {
     return {
       rawText: item.rawText,
@@ -59,7 +66,7 @@ async function estimateIngredient(item: NutritionIngredientInput): Promise<Ingre
     };
   }
 
-  const converted = toGrams(item.quantity, item.unit, food);
+  const converted = toGrams(quantity, unit, food, item.rawText);
   if (converted.grams === null) {
     return {
       rawText: item.rawText,

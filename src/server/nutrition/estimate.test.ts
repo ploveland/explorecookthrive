@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { compareRecipeNutrition, estimateRecipeNutrition } from "./estimate";
+import { findCatalogFood } from "./catalog";
 
 describe("USDA recipe estimates", () => {
   it("estimates a measured flour-and-butter dough", async () => {
@@ -55,5 +56,34 @@ describe("USDA recipe estimates", () => {
     expect(result.ingredients[1]?.status).toBe("unmapped");
     expect(result.unmappedCount).toBe(1);
     expect(result.totals.calories).toBe(0);
+  });
+
+  it("does not undercount kitchen-style original lines", async () => {
+    const messy = await estimateRecipeNutrition(
+      [
+        { rawText: "1 lb. ground beef", name: "lb. ground beef", quantity: 1, unit: null },
+        { rawText: "1 (15 oz) can black beans, drained", name: "(15 oz) can black beans", quantity: 1, unit: null },
+        { rawText: "1½ cups all-purpose flour", name: "1½ cups all-purpose flour", quantity: null, unit: null },
+        { rawText: "1 whole chicken, cut up", name: "chicken", quantity: 1, unit: "whole" },
+        { rawText: "8 oz. cream cheese", name: "oz. cream cheese", quantity: 8, unit: null },
+        { rawText: "1 cup yellow cornmeal", name: "yellow cornmeal", quantity: 1, unit: "cup" },
+        { rawText: "1 1/2 pounds cube steak", name: "cube steak", quantity: 1.5, unit: "pounds" },
+      ],
+      6,
+    );
+
+    const calories = Object.fromEntries(
+      messy.ingredients.map((item) => [item.rawText, item.nutrients?.calories ?? 0]),
+    );
+    expect(messy.unmappedCount).toBe(0);
+    expect(calories["1 lb. ground beef"]).toBeGreaterThan(1000);
+    expect(calories["1 (15 oz) can black beans, drained"]).toBeGreaterThan(150);
+    expect(calories["1½ cups all-purpose flour"]).toBeGreaterThan(400);
+    expect(calories["1 whole chicken, cut up"]).toBeGreaterThan(2500);
+    expect(calories["8 oz. cream cheese"]).toBeGreaterThan(700);
+    expect(calories["1 cup yellow cornmeal"]).toBeGreaterThan(500);
+    expect(calories["1 1/2 pounds cube steak"]).toBeGreaterThan(1500);
+    expect(findCatalogFood("cream cheese")?.id).toBe("cream-cheese");
+    expect(findCatalogFood("homemade chicken broth")?.id).toBe("broth");
   });
 });

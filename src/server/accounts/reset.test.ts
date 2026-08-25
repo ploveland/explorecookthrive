@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { readdir, readFile, rm } from "node:fs/promises";
 import path from "node:path";
 import { AccountError, createUser, verifyUser } from "./users";
@@ -7,6 +7,12 @@ import { consumePasswordReset, issuePasswordReset, requestPasswordReset } from "
 const RESET_DIR = path.join(process.cwd(), ".data", "password-resets");
 const USER_DIR = path.join(process.cwd(), ".data", "users");
 const OUTBOX_DIR = path.join(process.cwd(), ".data", "mail-outbox");
+
+beforeEach(async () => {
+  await rm(RESET_DIR, { recursive: true, force: true });
+  await rm(USER_DIR, { recursive: true, force: true });
+  await rm(OUTBOX_DIR, { recursive: true, force: true });
+});
 
 afterEach(async () => {
   await rm(RESET_DIR, { recursive: true, force: true });

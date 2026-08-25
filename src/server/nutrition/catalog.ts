@@ -159,7 +159,7 @@ export const CATALOG: CatalogFood[] = [
     id: "spaghetti",
     fdcId: 168928,
     description: "Pasta, dry, enriched",
-    aliases: ["spaghetti", "pasta", "noodles", "bucatini", "linguine"],
+    aliases: ["spaghetti", "pasta", "noodles", "bucatini", "linguine", "penne", "fettuccine"],
     per100g: n(371, 13, 1.5, 0.3, 74.7, 3.2, 2.7, 6),
     cupGrams: 91,
   },
@@ -197,12 +197,40 @@ export const CATALOG: CatalogFood[] = [
     densityGPerMl: 1,
   },
   {
+    id: "chicken-whole",
+    fdcId: 171077,
+    description: "Chicken, broilers or fryers, meat and skin, raw",
+    aliases: [
+      "whole chicken",
+      "chicken cut up",
+      "cut up chicken",
+      "fryer chicken",
+      "whole fryer",
+      "roasting chicken",
+      "chicken, cut up",
+    ],
+    per100g: n(215, 18.6, 15.1, 4.3, 0, 0, 0, 70),
+    pieceGrams: 1600,
+  },
+  {
     id: "chicken",
     fdcId: 171077,
     description: "Chicken, broilers or fryers, raw",
-    aliases: ["chicken", "chicken pieces", "bone-in chicken", "chicken thighs", "chicken breast", "fried chicken"],
+    aliases: [
+      "chicken",
+      "chicken pieces",
+      "bone-in chicken",
+      "chicken thighs",
+      "chicken thigh",
+      "chicken breast",
+      "chicken breasts",
+      "fried chicken",
+      "chicken drumsticks",
+      "chicken legs",
+      "chicken wings",
+    ],
     per100g: n(215, 18.6, 15.1, 4.3, 0, 0, 0, 70),
-    pieceGrams: 170,
+    pieceGrams: 120,
   },
   {
     id: "paprika",
@@ -224,7 +252,7 @@ export const CATALOG: CatalogFood[] = [
     id: "beef",
     fdcId: 174036,
     description: "Beef, ground, 80% lean, raw",
-    aliases: ["ground beef", "beef", "minced beef", "chuck"],
+    aliases: ["ground beef", "beef", "minced beef", "chuck", "cube steak", "steak", "sirloin", "beef stew meat"],
     per100g: n(254, 17.2, 20, 7.6, 0, 0, 0, 66),
   },
   {
@@ -416,6 +444,197 @@ export const CATALOG: CatalogFood[] = [
     per100g: n(379, 13.2, 6.5, 1.1, 67.7, 10.1, 0.8, 6),
     cupGrams: 81,
   },
+  {
+    id: "cornmeal",
+    fdcId: 168867,
+    description: "Cornmeal, yellow, dry",
+    aliases: ["cornmeal", "yellow cornmeal", "corn meal"],
+    per100g: n(370, 8.1, 3.6, 0.5, 79.5, 7.3, 1.8, 7),
+    cupGrams: 156,
+  },
+  {
+    id: "cream-cheese",
+    fdcId: 173418,
+    description: "Cheese, cream",
+    aliases: ["cream cheese"],
+    per100g: n(342, 5.9, 34.2, 19.3, 4.1, 0, 3.2, 321),
+    cupGrams: 232,
+    tbspGrams: 14.5,
+  },
+  {
+    id: "heavy-cream",
+    fdcId: 170859,
+    description: "Cream, heavy whipping",
+    aliases: ["heavy cream", "whipping cream", "heavy whipping cream"],
+    per100g: n(340, 2.8, 36.1, 23.0, 2.7, 0, 2.7, 27),
+    cupGrams: 238,
+    tbspGrams: 15,
+    densityGPerMl: 0.99,
+  },
+  {
+    id: "mozzarella",
+    fdcId: 167705,
+    description: "Cheese, mozzarella, whole milk",
+    aliases: ["mozzarella", "mozzarella cheese"],
+    per100g: n(300, 22.2, 22.4, 13.2, 2.2, 0, 1, 627),
+    cupGrams: 112,
+  },
+  {
+    id: "pork",
+    fdcId: 167812,
+    description: "Pork, fresh, ground, raw",
+    aliases: ["pork", "ground pork", "pork shoulder", "pork chops", "pork loin"],
+    per100g: n(263, 16.9, 21.2, 7.9, 0, 0, 0, 73),
+    pieceGrams: 170,
+  },
+  {
+    id: "sausage",
+    fdcId: 174583,
+    description: "Sausage, Italian, pork, raw",
+    aliases: ["sausage", "italian sausage", "pork sausage"],
+    per100g: n(346, 14.3, 31.3, 11.1, 0.7, 0, 0, 731),
+    pieceGrams: 85,
+  },
+  {
+    id: "potato",
+    fdcId: 170026,
+    description: "Potatoes, russet, raw",
+    aliases: ["potato", "potatoes", "russet potato", "russet potatoes", "yukon gold potato"],
+    per100g: n(79, 2.1, 0.1, 0, 18.1, 1.3, 0.8, 5),
+    pieceGrams: 170,
+    cupGrams: 150,
+  },
+  {
+    id: "breadcrumbs",
+    fdcId: 174930,
+    description: "Bread crumbs, dry, grated, plain",
+    aliases: ["breadcrumbs", "bread crumbs", "panko", "panko breadcrumbs"],
+    per100g: n(395, 13.4, 5.3, 1.2, 71.7, 4.5, 6.2, 732),
+    cupGrams: 108,
+  },
+  {
+    id: "mayonnaise",
+    fdcId: 171009,
+    description: "Salad dressing, mayonnaise",
+    aliases: ["mayonnaise", "mayo"],
+    per100g: n(680, 1, 75, 11.7, 0.6, 0, 0.6, 635),
+    tbspGrams: 13.8,
+    cupGrams: 220,
+  },
+  {
+    id: "soy-sauce",
+    fdcId: 174277,
+    description: "Soy sauce made from soy and wheat",
+    aliases: ["soy sauce", "tamari"],
+    per100g: n(53, 8.1, 0.1, 0, 4.9, 0.8, 0.4, 5493),
+    tbspGrams: 16,
+    tspGrams: 5,
+  },
+  {
+    id: "tomato-sauce",
+    fdcId: 170051,
+    description: "Tomato products, canned, sauce",
+    aliases: ["tomato sauce", "marinara", "pasta sauce"],
+    per100g: n(24, 1.2, 0.3, 0, 5.3, 1.5, 3.6, 474),
+    cupGrams: 245,
+    canGrams: 411,
+  },
+  {
+    id: "pinto-beans",
+    fdcId: 173793,
+    description: "Beans, pinto, canned",
+    aliases: ["pinto beans", "canned pinto beans"],
+    per100g: n(82, 4.6, 0.6, 0.1, 14.5, 4.6, 0.5, 239),
+    canGrams: 250,
+    cupGrams: 240,
+  },
+  {
+    id: "chickpeas",
+    fdcId: 173800,
+    description: "Chickpeas, canned",
+    aliases: ["chickpeas", "garbanzo beans", "garbanzos"],
+    per100g: n(88, 4.8, 1.9, 0.2, 13.5, 4.3, 2.4, 220),
+    canGrams: 250,
+    cupGrams: 240,
+  },
+  {
+    id: "shrimp",
+    fdcId: 175180,
+    description: "Crustaceans, shrimp, raw",
+    aliases: ["shrimp", "prawns"],
+    per100g: n(71, 13.6, 1, 0.3, 0.9, 0, 0, 566),
+    cupGrams: 145,
+  },
+  {
+    id: "mushroom",
+    fdcId: 169251,
+    description: "Mushrooms, white, raw",
+    aliases: ["mushroom", "mushrooms", "cremini", "button mushrooms"],
+    per100g: n(22, 3.1, 0.3, 0.1, 3.3, 1, 2, 5),
+    cupGrams: 70,
+    pieceGrams: 18,
+  },
+  {
+    id: "spinach",
+    fdcId: 168462,
+    description: "Spinach, raw",
+    aliases: ["spinach", "baby spinach"],
+    per100g: n(23, 2.9, 0.4, 0.1, 3.6, 2.2, 0.4, 79),
+    cupGrams: 30,
+    bunchGrams: 340,
+  },
+  {
+    id: "lime-juice",
+    fdcId: 168155,
+    description: "Lime juice, raw",
+    aliases: ["lime juice", "lime", "juice of lime"],
+    per100g: n(25, 0.4, 0.1, 0, 8.4, 0.4, 1.7, 2),
+    tbspGrams: 15,
+    pieceGrams: 44,
+  },
+  {
+    id: "vinegar",
+    fdcId: 172237,
+    description: "Vinegar, distilled",
+    aliases: ["vinegar", "white vinegar", "apple cider vinegar", "red wine vinegar", "cider vinegar"],
+    per100g: n(18, 0, 0, 0, 0.04, 0, 0.04, 2),
+    tbspGrams: 15,
+    cupGrams: 239,
+  },
+  {
+    id: "worcestershire",
+    fdcId: 174543,
+    description: "Sauce, worcestershire",
+    aliases: ["worcestershire", "worcestershire sauce"],
+    per100g: n(78, 0, 0, 0, 19.2, 0, 10, 980),
+    tspGrams: 5,
+    tbspGrams: 17,
+  },
+  {
+    id: "bread",
+    fdcId: 174930,
+    description: "Bread, white, commercially prepared",
+    aliases: ["bread", "white bread", "sandwich bread"],
+    per100g: n(266, 8.9, 3.3, 0.7, 49.4, 2.7, 5.3, 491),
+    sliceGrams: 28,
+    pieceGrams: 28,
+  },
+  {
+    id: "tortilla",
+    fdcId: 174931,
+    description: "Tortillas, ready-to-bake or -fry, flour",
+    aliases: ["tortilla", "tortillas", "flour tortilla", "flour tortillas"],
+    per100g: n(312, 8.2, 7.1, 1.7, 51.6, 2.4, 1.7, 636),
+    pieceGrams: 49,
+  },
+  {
+    id: "brown-rice",
+    fdcId: 168875,
+    description: "Rice, brown, long-grain, raw",
+    aliases: ["brown rice"],
+    per100g: n(370, 7.9, 2.9, 0.6, 77.2, 3.5, 0.9, 7),
+    cupGrams: 190,
+  },
 ];
 
 const IGNORE = [
@@ -447,7 +666,7 @@ function normalize(value: string): string {
     .replace(/\(.*?\)/g, " ")
     .replace(/[^a-z0-9\s-]/g, " ")
     .replace(
-      /\b(fresh|chopped|diced|minced|sliced|softened|melted|drained|rinsed|packed|sifted|divided|optional|organic|cold|warm|hot|room temperature|about|plus more|to taste|unsalted|salted|large|small|medium|finely|roughly|thinly|grated|shredded|crushed|ground|dried|canned|cooked|raw)\b/g,
+      /\b(fresh|chopped|diced|minced|sliced|softened|melted|drained|rinsed|packed|sifted|divided|optional|organic|cold|warm|hot|room temperature|about|plus more|to taste|unsalted|salted|large|small|medium|finely|roughly|thinly|grated|shredded|crushed|ground|dried|canned|cooked|raw|boneless|skinless|bone-in|skin-on|extra-virgin|low-fat|fat-free|nonfat)\b/g,
       " ",
     )
     .replace(/\s+/g, " ")
@@ -458,15 +677,28 @@ type AliasEntry = { alias: string; food: CatalogFood };
 
 const ALIASES: AliasEntry[] = CATALOG.flatMap((food) =>
   [food.description, ...food.aliases].map((alias) => ({ alias: normalize(alias), food })),
-).sort((a, b) => b.alias.length - a.alias.length);
+);
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function aliasScore(needle: string, alias: string): number {
+  if (!alias || alias.length < 3) return 0;
+  if (needle === alias) return 10000 + alias.length;
+  const bounded = new RegExp(`(?:^|\\s)${escapeRegExp(alias)}(?:\\s|$)`);
+  if (bounded.test(needle)) return 1000 + alias.length;
+  return 0;
+}
 
 export function findCatalogFood(name: string): CatalogFood | null {
   const needle = normalize(name);
   if (!needle) return null;
-  const exact = ALIASES.find((entry) => entry.alias === needle);
-  if (exact) return exact.food;
-  const contained = ALIASES.find(
-    (entry) => entry.alias.length >= 4 && (needle.includes(entry.alias) || entry.alias.includes(needle)),
-  );
-  return contained?.food ?? null;
+  let best: { food: CatalogFood; score: number } | null = null;
+  for (const entry of ALIASES) {
+    const score = aliasScore(needle, entry.alias);
+    if (score === 0) continue;
+    if (!best || score > best.score) best = { food: entry.food, score };
+  }
+  return best?.food ?? null;
 }
