@@ -75,5 +75,5 @@ export function groupJobsByOriginal(jobs: ConversionJob[]): OriginalGroup[] {
 export function sameKitchen(a: ConversionJob, b: ConversionJob) {
   if (a.userId && b.userId) return a.userId === b.userId;
   if (a.guestId && b.guestId) return a.guestId === b.guestId;
-  return false;
+  return !a.userId && !b.userId && !a.guestId && !b.guestId;
 }

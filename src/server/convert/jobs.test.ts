@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import { rm } from "node:fs/promises";
 import path from "node:path";
 import { saveDraft } from "../drafts/store";
-import { createJob, ensureDraftFromJob, getJob, processJob, JobError } from "./jobs";
+import { createJob, ensureDraftFromJob, getJob, listRelatedJobs, processJob, JobError } from "./jobs";
+import { versionNumberFor } from "./versions";
 
 const sampleRecipe = {
   title: "Weeknight chili",
@@ -134,5 +135,10 @@ describe("conversion jobs", () => {
     const done = await processJob(second.id);
     expect(done?.status).toBe("complete");
     expect(done?.output?.thriveVersion.ingredients.length).toBeGreaterThan(0);
+
+    const related = await listRelatedJobs(done!);
+    expect(related.map((item) => item.id).sort()).toEqual([first.id, second.id].sort());
+    expect(versionNumberFor(related, first.id)).toBe(1);
+    expect(versionNumberFor(related, second.id)).toBe(2);
   });
 });

@@ -4,6 +4,7 @@ import path from "node:path";
 import { saveDraft, getDraft } from "../drafts/store";
 import { log } from "../log";
 import { compareRecipeNutrition, type NutritionIngredientInput } from "../nutrition/estimate";
+import { inputFromExtractedRecipe } from "./from-recipe";
 import { sameKitchen } from "./versions";
 import { hasLiveLlm, runConversion } from "./run";
 import {

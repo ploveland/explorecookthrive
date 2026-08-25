@@ -107,5 +107,13 @@ describe("thrive versions of one original", () => {
     });
     expect(sameKitchen(mine, theirs)).toBe(false);
     expect(sameKitchen(mine, { ...mine, id: "also-mine" })).toBe(true);
+    const orphan = job({
+      id: "orphan-a",
+      draftId: "chili",
+      createdAt: "2026-08-25T10:00:00.000Z",
+      userId: null,
+    });
+    expect(sameKitchen(orphan, { ...orphan, id: "orphan-b" })).toBe(true);
+    expect(sameKitchen(mine, orphan)).toBe(false);
   });
 });
