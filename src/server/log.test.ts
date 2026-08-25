@@ -17,6 +17,9 @@ describe("log sanitizer", () => {
       comment: "Still tasted like chili.",
       token: "reset-secret",
       password: "cornbread1",
+      access_token: "ya29.hidden",
+      id_token: "eyJhidden",
+      refresh_token: "1//hidden",
       success: true,
     });
     expect(spy).toHaveBeenCalledTimes(1);
@@ -30,5 +33,8 @@ describe("log sanitizer", () => {
     expect(payload.comment).toBeUndefined();
     expect(payload.token).toBeUndefined();
     expect(payload.password).toBeUndefined();
+    expect(payload.access_token).toBeUndefined();
+    expect(payload.id_token).toBeUndefined();
+    expect(payload.refresh_token).toBeUndefined();
   });
 });

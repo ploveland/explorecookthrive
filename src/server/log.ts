@@ -34,6 +34,9 @@ const BLOCKED_KEYS = new Set([
   "passwordHash",
   "resetUrl",
   "resetLink",
+  "access_token",
+  "id_token",
+  "refresh_token",
 ]);
 
 function sanitize(fields: LogFields): LogFields {

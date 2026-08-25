@@ -1,12 +1,16 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { verifyUser } from "@/server/accounts/users";
+import Google from "next-auth/providers/google";
+import { cookies } from "next/headers";
+import { AUTH_NEXT_COOKIE } from "@/server/accounts/constants";
+import { googleAuthConfigured, resolveGoogleLogin } from "@/server/accounts/google";
+import { getUserByGoogleId, verifyUser } from "@/server/accounts/users";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
   secret: process.env.AUTH_SECRET ?? "ect-local-dev-secret-change-me",
   session: { strategy: "jwt" },
-  pages: { signIn: "/signin" },
+  pages: { signIn: "/signin", error: "/signin" },
   providers: [
     Credentials({
       credentials: {
@@ -21,10 +25,51 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return { id: user.id, email: user.email, name: user.name };
       },
     }),
+    ...(googleAuthConfigured()
+      ? [
+          Google({
+            clientId: process.env.AUTH_GOOGLE_ID!,
+            clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+          }),
+        ]
+      : []),
   ],
   callbacks: {
-    jwt({ token, user }) {
-      if (user) {
+    async signIn({ user, account, profile }) {
+      if (account?.provider !== "google") return true;
+
+      const jar = await cookies();
+      const next = jar.get(AUTH_NEXT_COOKIE)?.value ?? null;
+      jar.delete({ name: AUTH_NEXT_COOKIE, path: "/" });
+
+      const result = await resolveGoogleLogin(
+        {
+          sub: account.providerAccountId,
+          email: user.email,
+          email_verified: (profile as { email_verified?: boolean | string } | undefined)?.email_verified,
+          name: user.name,
+        },
+        { next },
+      );
+
+      if (result.status === "ok") return true;
+      if (result.status === "link") {
+        return `/signin/connect-google?token=${encodeURIComponent(result.token)}`;
+      }
+      return `/signin?reason=google_${result.reason}`;
+    },
+    async jwt({ token, user, account }) {
+      if (account?.provider === "google") {
+        const kitchen = await getUserByGoogleId(account.providerAccountId);
+        if (!kitchen) {
+          throw new Error("Google kitchen was not created.");
+        }
+        token.sub = kitchen.id;
+        token.email = kitchen.email;
+        token.name = kitchen.name;
+        return token;
+      }
+      if (user?.id) {
         token.sub = user.id;
         token.email = user.email;
         token.name = user.name;

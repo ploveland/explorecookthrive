@@ -11,7 +11,8 @@ export const userRecordSchema = z.object({
   id: z.string(),
   email: z.string().email(),
   name: z.string().min(1),
-  passwordHash: z.string(),
+  passwordHash: z.string().nullable().default(null),
+  googleId: z.string().nullable().default(null),
   createdAt: z.string(),
 });
 
@@ -25,7 +26,8 @@ export class AccountError extends Error {
       | "invalid_credentials"
       | "invalid_input"
       | "invalid_token"
-      | "not_found",
+      | "not_found"
+      | "google_conflict",
     message: string,
   ) {
     super(message);
@@ -77,6 +79,13 @@ export async function getUserByEmail(email: string): Promise<UserRecord | null> 
   return users.find((user) => user.email === normalized) ?? null;
 }
 
+export async function getUserByGoogleId(googleId: string): Promise<UserRecord | null> {
+  const id = googleId.trim();
+  if (!id) return null;
+  const users = await readAll();
+  return users.find((user) => user.googleId === id) ?? null;
+}
+
 export function toPublicUser(user: UserRecord): PublicUser {
   return { id: user.id, email: user.email, name: user.name };
 }
@@ -103,15 +112,62 @@ export async function createUser(input: {
     email,
     name,
     passwordHash: await hashPassword(input.password),
+    googleId: null,
     createdAt: new Date().toISOString(),
   };
   await writeUser(user);
   return toPublicUser(user);
 }
 
+export async function createGoogleUser(input: {
+  email: string;
+  name: string;
+  googleId: string;
+}): Promise<PublicUser> {
+  const email = normalizeEmail(input.email);
+  const name = input.name.trim() || "Cook";
+  const googleId = input.googleId.trim();
+  if (!email || !googleId) {
+    throw new AccountError("invalid_input", "Google did not send a verified email we can use.");
+  }
+  const existingGoogle = await getUserByGoogleId(googleId);
+  if (existingGoogle) return toPublicUser(existingGoogle);
+  if (await getUserByEmail(email)) {
+    throw new AccountError("email_taken", "That email already has a kitchen.");
+  }
+  const user: UserRecord = {
+    id: randomUUID(),
+    email,
+    name,
+    passwordHash: null,
+    googleId,
+    createdAt: new Date().toISOString(),
+  };
+  await writeUser(user);
+  return toPublicUser(user);
+}
+
+export async function linkGoogleId(userId: string, googleId: string): Promise<PublicUser> {
+  const id = googleId.trim();
+  const user = await getUserById(userId);
+  if (!user || !id) {
+    throw new AccountError("not_found", "That kitchen is no longer on this host.");
+  }
+  const taken = await getUserByGoogleId(id);
+  if (taken && taken.id !== user.id) {
+    throw new AccountError("google_conflict", "That Google account is already tied to another kitchen.");
+  }
+  if (user.googleId && user.googleId !== id) {
+    throw new AccountError("google_conflict", "This kitchen is already connected to a different Google account.");
+  }
+  const next: UserRecord = { ...user, googleId: id };
+  await writeUser(next);
+  return toPublicUser(next);
+}
+
 export async function verifyUser(email: string, password: string): Promise<PublicUser | null> {
   const user = await getUserByEmail(email);
-  if (!user) return null;
+  if (!user?.passwordHash) return null;
   const ok = await verifyPassword(password, user.passwordHash);
   return ok ? toPublicUser(user) : null;
 }

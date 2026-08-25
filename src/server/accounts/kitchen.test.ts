@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { rm } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { createCollection, addToCollection, listCollections } from "./collections";
 import { listFavoriteSlugs, toggleFavorite } from "./favorites";
-import { AccountError, createUser, setPasswordByEmail, verifyUser } from "./users";
+import { AccountError, createUser, getUserById, setPasswordByEmail, verifyUser } from "./users";
 
 afterEach(async () => {
   await rm(path.join(process.cwd(), ".data", "users"), { recursive: true, force: true });
@@ -36,6 +36,25 @@ describe("users", () => {
     await setPasswordByEmail("pam@example.com", "castiron1");
     expect(await verifyUser("pam@example.com", "castiron1")).not.toBeNull();
     expect(await verifyUser("pam@example.com", "cornbread1")).toBeNull();
+  });
+
+  it("reads kitchens saved before Google login existed", async () => {
+    const dir = path.join(process.cwd(), ".data", "users");
+    await mkdir(dir, { recursive: true });
+    const id = "legacy-user";
+    await writeFile(
+      path.join(dir, `${id}.json`),
+      JSON.stringify({
+        id,
+        email: "old@example.com",
+        name: "Old",
+        passwordHash: "not-a-real-hash",
+        createdAt: new Date().toISOString(),
+      }),
+    );
+    const user = await getUserById(id);
+    expect(user?.googleId).toBeNull();
+    expect(user?.passwordHash).toBe("not-a-real-hash");
   });
 });
 
