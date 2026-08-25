@@ -19,7 +19,7 @@ export async function KitchenNav() {
         </h1>
         <p className="mt-3 max-w-2xl text-lg leading-8 text-teal/80">
           {account.user
-            ? "Conversions, favorites, and collections stay with this account on this machine."
+            ? "Conversions, favorites, and collections stay with this account. Thrive Versions of the same original stay together."
             : "Guest conversions land here for a while. Sign in to keep them, favorite recipes, and publish."}
         </p>
       </div>

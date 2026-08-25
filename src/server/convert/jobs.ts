@@ -4,7 +4,7 @@ import path from "node:path";
 import { saveDraft, getDraft } from "../drafts/store";
 import { log } from "../log";
 import { compareRecipeNutrition, type NutritionIngredientInput } from "../nutrition/estimate";
-import { inputFromExtractedRecipe } from "./from-recipe";
+import { sameKitchen } from "./versions";
 import { hasLiveLlm, runConversion } from "./run";
 import {
   ACTIVE_JOB_STAGES,
@@ -268,6 +268,13 @@ function toNutritionInputs(
 
 export function startJob(id: string) {
   void processJob(id);
+}
+
+export async function listRelatedJobs(job: ConversionJob): Promise<ConversionJob[]> {
+  const jobs = await listJobs();
+  return jobs
+    .filter((candidate) => candidate.draftId === job.draftId && sameKitchen(candidate, job))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 export function publicJob(job: ConversionJob) {

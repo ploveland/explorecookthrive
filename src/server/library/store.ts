@@ -72,6 +72,11 @@ export async function getPublishedByJobId(jobId: string): Promise<PublishedRecip
   return recipes.find((recipe) => recipe.jobId === jobId) ?? null;
 }
 
+export async function indexPublishedSlugs(): Promise<Map<string, string>> {
+  const recipes = await readAll();
+  return new Map(recipes.map((recipe) => [recipe.jobId, recipe.slug]));
+}
+
 export async function listPublished(filters?: {
   tag?: string | null;
   query?: string | null;

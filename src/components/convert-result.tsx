@@ -11,6 +11,7 @@ import {
   PREFERENCE_COPY,
   type ConversionJob,
 } from "@/server/convert/schema";
+import type { ThriveVersionSummary } from "@/server/convert/versions";
 import type { ExtractedRecipe } from "@/server/recipes/schema";
 
 function IngredientList({
@@ -36,12 +37,17 @@ export function ConvertResult({
   job,
   publishedSlug,
   signedIn = false,
+  versionNumber = null,
+  siblings = [],
 }: {
   job: ConversionJob & { output: ConversionOutput; recipe: ExtractedRecipe };
   publishedSlug?: string | null;
   signedIn?: boolean;
+  versionNumber?: number | null;
+  siblings?: ThriveVersionSummary[];
 }) {
   const output = job.output;
+  const otherVersions = siblings.filter((version) => version.id !== job.id);
 
   return (
     <div className="space-y-10">
@@ -49,6 +55,9 @@ export function ConvertResult({
         <Badge variant={publishedSlug ? "outline" : "secondary"}>
           {publishedSlug ? "Published" : "Private"}
         </Badge>
+        {versionNumber ? (
+          <Badge variant="outline">Version {versionNumber}</Badge>
+        ) : null}
         <Badge variant="outline">{PREFERENCE_COPY[job.preference].label}</Badge>
         {job.goals.map((goal) => (
           <Badge key={goal} variant="outline">
@@ -153,9 +162,35 @@ export function ConvertResult({
         and thrive this original again.
       </p>
 
+      {otherVersions.length > 0 ? (
+        <section className="space-y-3">
+          <h2 className="font-heading text-2xl text-teal">Other Thrive Versions of this original</h2>
+          <ul className="space-y-3">
+            {otherVersions.map((version) => (
+              <li key={version.id} className="rounded-2xl bg-white/80 px-4 py-3 ring-1 ring-teal/10">
+                <p className="font-medium text-teal">
+                  Version {version.versionNumber} · {version.title}
+                </p>
+                <p className="mt-1 text-sm text-teal/70">{version.choices}</p>
+                <Button
+                  render={<Link href={`/convert/result/${version.id}`} />}
+                  variant="outline"
+                  className="mt-3"
+                >
+                  Open
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       <div className="flex flex-wrap gap-3">
         <Button render={<Link href={`/convert/again/${job.id}`} />} variant="outline">
           Change choices and thrive again
+        </Button>
+        <Button render={<Link href="/kitchen" />} variant="outline">
+          All versions in your kitchen
         </Button>
         <Button render={<Link href="/#thrive" />} className="bg-terracotta-strong text-cream">
           Thrive another recipe

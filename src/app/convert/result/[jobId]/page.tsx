@@ -1,7 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import { ConvertResult } from "@/components/convert-result";
 import { currentAccount } from "@/server/accounts/session";
-import { getJob } from "@/server/convert/jobs";
+import { getJob, listRelatedJobs } from "@/server/convert/jobs";
+import { completeVersions, versionNumberFor } from "@/server/convert/versions";
 import { getPublishedByJobId } from "@/server/library/store";
 
 export const dynamic = "force-dynamic";
@@ -20,17 +21,24 @@ export default async function ConvertResultPage({
 
   const published = await getPublishedByJobId(job.id);
   const account = await currentAccount();
+  const related = await listRelatedJobs(job);
+  const siblings = completeVersions(related);
+  const versionNumber = versionNumberFor(related, job.id);
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-12 sm:px-6">
       <p className="text-sm font-semibold tracking-[0.18em] text-terracotta uppercase">
-        Thrive Version
+        {versionNumber && siblings.length > 1
+          ? `Thrive Version ${versionNumber} of ${siblings.length}`
+          : "Thrive Version"}
       </p>
       <h1 className="font-heading text-4xl text-teal">{job.output.thriveVersion.title}</h1>
       <ConvertResult
         job={{ ...job, output: job.output }}
         publishedSlug={published?.slug ?? null}
         signedIn={Boolean(account.userId)}
+        versionNumber={versionNumber}
+        siblings={siblings}
       />
     </div>
   );
