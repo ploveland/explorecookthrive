@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
+import { PASSWORD_MIN_LENGTH } from "./constants";
 import { hashPassword, verifyPassword } from "./password";
 
 const DIR = path.join(process.cwd(), ".data", "users");
@@ -19,7 +20,12 @@ export type PublicUser = Pick<UserRecord, "id" | "email" | "name">;
 
 export class AccountError extends Error {
   constructor(
-    public readonly code: "email_taken" | "invalid_credentials" | "invalid_input",
+    public readonly code:
+      | "email_taken"
+      | "invalid_credentials"
+      | "invalid_input"
+      | "invalid_token"
+      | "not_found",
     message: string,
   ) {
     super(message);
@@ -82,7 +88,7 @@ export async function createUser(input: {
 }): Promise<PublicUser> {
   const email = normalizeEmail(input.email);
   const name = input.name.trim();
-  if (!email || !name || input.password.length < 8) {
+  if (!email || !name || input.password.length < PASSWORD_MIN_LENGTH) {
     throw new AccountError(
       "invalid_input",
       "Use a real email, a name, and a password of at least 8 characters.",
@@ -99,8 +105,7 @@ export async function createUser(input: {
     passwordHash: await hashPassword(input.password),
     createdAt: new Date().toISOString(),
   };
-  await ensureDir();
-  await writeFile(fileFor(user.id), JSON.stringify(user, null, 2), "utf8");
+  await writeUser(user);
   return toPublicUser(user);
 }
 
@@ -109,4 +114,36 @@ export async function verifyUser(email: string, password: string): Promise<Publi
   if (!user) return null;
   const ok = await verifyPassword(password, user.passwordHash);
   return ok ? toPublicUser(user) : null;
+}
+
+async function writeUser(user: UserRecord) {
+  await ensureDir();
+  await writeFile(fileFor(user.id), JSON.stringify(user, null, 2), "utf8");
+}
+
+export async function updatePassword(userId: string, password: string): Promise<PublicUser> {
+  if (password.length < PASSWORD_MIN_LENGTH) {
+    throw new AccountError(
+      "invalid_input",
+      "Use a password of at least 8 characters.",
+    );
+  }
+  const user = await getUserById(userId);
+  if (!user) {
+    throw new AccountError("not_found", "That kitchen is no longer on this host.");
+  }
+  const next: UserRecord = {
+    ...user,
+    passwordHash: await hashPassword(password),
+  };
+  await writeUser(next);
+  return toPublicUser(next);
+}
+
+export async function setPasswordByEmail(email: string, password: string): Promise<PublicUser> {
+  const user = await getUserByEmail(email);
+  if (!user) {
+    throw new AccountError("not_found", "No kitchen with that email.");
+  }
+  return updatePassword(user.id, password);
 }

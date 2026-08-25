@@ -31,6 +31,10 @@ services:
         value: ""
       - key: USDA_FDC_API_KEY
         value: ""
+      - key: RESEND_API_KEY
+        value: ""
+      - key: EMAIL_FROM
+        value: ""
     disk:
       name: ect-data
       mountPath: /opt/render/project/src/.data

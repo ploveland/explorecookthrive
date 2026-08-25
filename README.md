@@ -8,9 +8,9 @@ This repository is in **Phase 8**: the conversion kitchen plus community cook no
 
 Paste a recipe or a URL on the homepage. We structure it (JSON-LD first for URLs), you confirm the reading, then we convert it. Without `OPENAI_API_KEY`, conversions use a local culinary mock so the loop is still usable.
 
-Sign in with email and a password (Auth.js credentials). Publishing requires an account. History is at `/kitchen`, favorites at `/kitchen/favorites`, collections at `/kitchen/collections`. Guest conversions are claimed when you sign in. After you cook a public Thrive Version, rate taste, texture, similarity to the original, and ease. You can leave an optional short note. **Community Tested** means at least three other kitchens scored taste and texture 4 or higher and would make it again. Accounts, favorites, collections, ratings, and cook notes live in `.data/` alongside drafts and the library.
+Sign in with email and a password (Auth.js credentials). If you forget it, use **Forgot your password?** on the sign-in page. Publishing requires an account. History is at `/kitchen`, favorites at `/kitchen/favorites`, collections at `/kitchen/collections`. Guest conversions are claimed when you sign in. After you cook a public Thrive Version, rate taste, texture, similarity to the original, and ease. You can leave an optional short note. **Community Tested** means at least three other kitchens scored taste and texture 4 or higher and would make it again. Accounts, favorites, collections, ratings, and cook notes live in `.data/` alongside drafts and the library.
 
-Structured logs record job ids, extract codes, search result counts, publish slugs, and rating counts. Recipe bodies, ingredients, instructions, prompts, and cook notes are stripped before a line is written.
+Structured logs record job ids, extract codes, search result counts, publish slugs, and rating counts. Recipe bodies, ingredients, instructions, prompts, cook notes, passwords, and reset tokens are stripped before a line is written.
 
 ## Run locally
 
@@ -39,10 +39,12 @@ Drafts, conversion jobs, published recipes, accounts, favorites, collections, an
 | `AUTH_SECRET` | Auth.js secret. Required in production; a local fallback is used if empty |
 | `AUTH_URL` | Auth.js base URL. Defaults to the local app |
 | `APP_URL` | Canonical site URL for sitemap, robots, and Recipe JSON-LD. Falls back to `AUTH_URL`, then Render’s `RENDER_EXTERNAL_URL`, then `http://localhost:43123` |
+| `RESEND_API_KEY` | Sends password-reset mail. If empty, local/dev shows a one-hour reset link on the page; production needs this key (or the operator script below) |
+| `EMAIL_FROM` | Resend From address. Defaults to `Explore Cook Thrive <onboarding@resend.dev>` (that sender can only deliver to the Resend account email until you verify a domain) |
 
 Unsplash is not used. GitHub/Google login is not wired yet — email and password is the local account.
 
-Public crawl surfaces: `/`, `/recipes`, `/search`, and public `/recipes/[slug]`. `/convert`, `/kitchen`, `/signin`, `/signup`, and `/api` are disallowed in `robots.txt`. Unlisted and private recipes are `noindex` and stay off the sitemap.
+Public crawl surfaces: `/`, `/recipes`, `/search`, and public `/recipes/[slug]`. `/convert`, `/kitchen`, `/signin`, `/signup`, `/forgot-password`, `/reset-password`, and `/api` are disallowed in `robots.txt`. Unlisted and private recipes are `noindex` and stay off the sitemap.
 
 ## Scripts
 
@@ -51,6 +53,22 @@ Public crawl surfaces: `/`, `/recipes`, `/search`, and public `/recipes/[slug]`.
 - `npm test` — domain tests, including eval scoring (no live model calls)
 - `npm run eval` — conversion quality fixtures
 - `npm run db:validate` — Prisma schema check
+- `npm run db:studio` — Prisma studio
+- `npm run account:set-password` — operator reset: `--email you@example.com --password 'at-least-8-chars'`
+
+## Password reset
+
+Kitchens recover a forgotten password from **Sign in → Forgot your password?**. The link is single-use and expires in an hour. The form always says the same thing whether or not that email has a kitchen.
+
+On Render, add `RESEND_API_KEY` (and optionally `EMAIL_FROM` after you verify a domain). Until a domain is verified, Resend’s `onboarding@resend.dev` sender only delivers to the email on the Resend account — enough to recover the operator kitchen.
+
+If mail is not configured yet, recover from the Render shell against the persistent disk:
+
+```bash
+npm run account:set-password -- --email you@example.com --password 'at-least-8-chars'
+```
+
+Locally, with no Resend key, the forgot-password page shows the reset link so you can finish the loop without leaving the machine.
 
 ## Deploy on Render
 
@@ -59,7 +77,7 @@ The live kitchen needs a **persistent disk**. Render’s free web service cannot
 1. Push this repo to GitHub (`git push github main`).
 2. In [Render](https://dashboard.render.com), open **New → Blueprint** and connect `ploveland/explorecookthrive` (or your fork). Render reads `render.yaml`.
 3. Deploy. The public URL looks like `https://explore-cook-thrive.onrender.com`. Auth and sitemap use Render’s `RENDER_EXTERNAL_URL` until you set `APP_URL` and `AUTH_URL`.
-4. The first ship uses the culinary mock and local USDA catalog. Add `OPENAI_API_KEY` (and optionally `USDA_FDC_API_KEY`) under **Environment** when you want live conversions.
+4. The first ship uses the culinary mock and local USDA catalog. Add `OPENAI_API_KEY` (and optionally `USDA_FDC_API_KEY`) under **Environment** when you want live conversions. Add `RESEND_API_KEY` so “Forgot your password?” can email a link.
 5. Optional: add a custom domain, then set both `APP_URL` and `AUTH_URL` to `https://your-domain.com` (no trailing slash).
 
 Kitchens, published recipes, and ratings persist on the `ect-data` disk across deploys. Take your own backups; a disk is not a database dump.

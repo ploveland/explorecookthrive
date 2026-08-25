@@ -7,7 +7,7 @@ describe("robots", () => {
     expect(doc.rules).toMatchObject({
       userAgent: "*",
       allow: "/",
-      disallow: ["/convert/", "/kitchen/", "/api/", "/signin", "/signup"],
+      disallow: ["/convert/", "/kitchen/", "/api/", "/signin", "/signup", "/forgot-password", "/reset-password"],
     });
     expect(doc.sitemap).toMatch(/\/sitemap\.xml$/);
   });

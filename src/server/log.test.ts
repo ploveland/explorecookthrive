@@ -15,6 +15,8 @@ describe("log sanitizer", () => {
       prompt: "secret",
       recipe: "private body",
       comment: "Still tasted like chili.",
+      token: "reset-secret",
+      password: "cornbread1",
       success: true,
     });
     expect(spy).toHaveBeenCalledTimes(1);
@@ -26,5 +28,7 @@ describe("log sanitizer", () => {
     expect(payload.prompt).toBeUndefined();
     expect(payload.recipe).toBeUndefined();
     expect(payload.comment).toBeUndefined();
+    expect(payload.token).toBeUndefined();
+    expect(payload.password).toBeUndefined();
   });
 });

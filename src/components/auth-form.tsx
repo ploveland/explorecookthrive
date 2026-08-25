@@ -50,7 +50,13 @@ export function AuthForm({
         />
         {mode === "signup" ? (
           <p className="text-xs text-teal/70">At least 8 characters. We store a hash, not the password.</p>
-        ) : null}
+        ) : (
+          <p className="text-sm text-teal/75">
+            <Link className="font-medium underline-offset-4 hover:underline" href="/forgot-password">
+              Forgot your password?
+            </Link>
+          </p>
+        )}
       </div>
       {error ? (
         <p role="alert" className="text-sm font-medium text-destructive">

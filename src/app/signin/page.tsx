@@ -10,6 +10,7 @@ export default async function SignInPage({
   const params = await searchParams;
   const next = params.next?.startsWith("/") ? params.next : "/kitchen";
   const limited = params.reason === "limit";
+  const reset = params.reason === "reset";
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-16 sm:px-6">
@@ -18,7 +19,9 @@ export default async function SignInPage({
       <p className="text-lg leading-8 text-teal/80">
         {limited
           ? "The first two conversions are open. Sign in to keep going, save favorites, and publish."
-          : "History, favorites, collections, and publishing live here. You can still try a recipe without an account."}
+          : reset
+            ? "Your password is updated. Sign in with the new one."
+            : "History, favorites, collections, and publishing live here. You can still try a recipe without an account."}
       </p>
       <AuthForm mode="signin" next={next} />
     </div>

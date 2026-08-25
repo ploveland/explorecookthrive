@@ -3,7 +3,7 @@ import { rm } from "node:fs/promises";
 import path from "node:path";
 import { createCollection, addToCollection, listCollections } from "./collections";
 import { listFavoriteSlugs, toggleFavorite } from "./favorites";
-import { createUser, verifyUser, AccountError } from "./users";
+import { AccountError, createUser, setPasswordByEmail, verifyUser } from "./users";
 
 afterEach(async () => {
   await rm(path.join(process.cwd(), ".data", "users"), { recursive: true, force: true });
@@ -29,6 +29,13 @@ describe("users", () => {
     await expect(
       createUser({ email: "pam@example.com", name: "Pamela", password: "cornbread1" }),
     ).rejects.toBeInstanceOf(AccountError);
+  });
+
+  it("replaces a forgotten password by email", async () => {
+    await createUser({ email: "pam@example.com", name: "Pam", password: "cornbread1" });
+    await setPasswordByEmail("pam@example.com", "castiron1");
+    expect(await verifyUser("pam@example.com", "castiron1")).not.toBeNull();
+    expect(await verifyUser("pam@example.com", "cornbread1")).toBeNull();
   });
 });
 

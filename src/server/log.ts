@@ -27,6 +27,13 @@ const BLOCKED_KEYS = new Set([
   "prompt",
   "system",
   "comment",
+  "token",
+  "rawToken",
+  "tokenHash",
+  "password",
+  "passwordHash",
+  "resetUrl",
+  "resetLink",
 ]);
 
 function sanitize(fields: LogFields): LogFields {
