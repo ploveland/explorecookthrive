@@ -18,8 +18,16 @@ export function AuthForm({
   const [error, formAction, pending] = useActionState(action, null);
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form action={formAction} className="relative space-y-4">
       <input type="hidden" name="next" value={next} />
+      {mode === "signup" ? (
+        <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
+          <label>
+            Website
+            <input type="text" name="website" tabIndex={-1} autoComplete="off" />
+          </label>
+        </div>
+      ) : null}
       {mode === "signup" ? (
         <div className="space-y-2">
           <Label htmlFor="name">Name</Label>

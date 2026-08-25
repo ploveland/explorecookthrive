@@ -14,6 +14,7 @@ const scores = {
 
 afterEach(async () => {
   await rm(path.join(process.cwd(), ".data", "ratings"), { recursive: true, force: true });
+  await rm(path.join(process.cwd(), ".data", "rating-writes"), { recursive: true, force: true });
   await rm(path.join(process.cwd(), ".data", "users"), { recursive: true, force: true });
 });
 
@@ -92,6 +93,29 @@ describe("community ratings store", () => {
         visibility: "private",
         ...scores,
       }),
-    ).rejects.toBeInstanceOf(RatingError);
+    ).rejects.toMatchObject({ code: "not_rateable" });
+
+    await expect(
+      upsertRating({
+        slug: "unlisted-chili",
+        userId: "cook-1",
+        ownerId: "owner",
+        visibility: "unlisted",
+        ...scores,
+      }),
+    ).rejects.toMatchObject({ code: "not_rateable" });
+  });
+
+  it("refuses a cook note with a link", async () => {
+    await expect(
+      upsertRating({
+        slug: "weeknight-chili",
+        userId: "cook-1",
+        ownerId: "owner",
+        visibility: "public",
+        ...scores,
+        comment: "Read more at https://spam.example/chili",
+      }),
+    ).rejects.toMatchObject({ code: "blocked_comment" });
   });
 });

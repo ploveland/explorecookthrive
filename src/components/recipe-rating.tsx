@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { CommunityBadge, communityTestedCopy } from "@/components/community-badge";
 import type { PublicReview, RecipeRating, RatingSummary } from "@/server/community/policy";
 import { COMMENT_MAX_LENGTH, COMMUNITY_TESTED_MIN_RATINGS } from "@/server/community/policy";
-import { cn } from "@/lib/utils";
+import { CONTACT_EMAIL, CONTACT_MAILTO } from "@/lib/contact";
+import { COMMENT_REJECTED_MESSAGE } from "@/server/community/moderate";
 
 const TASTE_COPY = {
   legend: "Taste — did it still taste like the dish?",
@@ -58,6 +59,7 @@ export function RecipeRatingPanel({
   const [ease, setEase] = useState(mine?.ease ?? 0);
   const [wouldMakeAgain, setWouldMakeAgain] = useState(mine?.wouldMakeAgain ?? true);
   const [comment, setComment] = useState(mine?.comment ?? "");
+  const [website, setWebsite] = useState("");
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -81,6 +83,7 @@ export function RecipeRatingPanel({
           ease,
           wouldMakeAgain,
           comment,
+          website,
         }),
       });
       const payload = (await response.json().catch(() => null)) as { message?: string } | null;
@@ -152,6 +155,16 @@ export function RecipeRatingPanel({
               </li>
             ))}
           </ul>
+          <p className="text-xs text-teal/60">
+            If a note is not about cooking this dish,{" "}
+            <a
+              className="font-medium underline-offset-4 hover:underline"
+              href={`${CONTACT_MAILTO}?subject=${encodeURIComponent(`Cook note on ${slug}`)}`}
+            >
+              email {CONTACT_EMAIL}
+            </a>
+            .
+          </p>
         </div>
       ) : null}
 
@@ -172,7 +185,7 @@ export function RecipeRatingPanel({
           to rate it after you cook it, and optionally leave a short note.
         </p>
       ) : (
-        <form onSubmit={onSubmit} className="space-y-5">
+        <form onSubmit={onSubmit} className="relative space-y-5">
           <ScaleField name="taste" copy={TASTE_COPY} value={taste} onChange={setTaste} />
           <ScaleField name="texture" copy={TEXTURE_COPY} value={texture} onChange={setTexture} />
           <ScaleField
@@ -203,9 +216,22 @@ export function RecipeRatingPanel({
               className="min-h-24 bg-white/80"
             />
             <span className="block text-xs text-teal/60">
-              {comment.trim().length}/{COMMENT_MAX_LENGTH}
+              {comment.trim().length}/{COMMENT_MAX_LENGTH}. {COMMENT_REJECTED_MESSAGE}
             </span>
           </label>
+          <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
+            <label>
+              Website
+              <input
+                type="text"
+                name="website"
+                tabIndex={-1}
+                autoComplete="off"
+                value={website}
+                onChange={(event) => setWebsite(event.target.value)}
+              />
+            </label>
+          </div>
           <Button type="submit" disabled={pending} className="h-11 bg-teal px-5 text-cream">
             {mine ? "Update rating" : "Save rating"}
           </Button>

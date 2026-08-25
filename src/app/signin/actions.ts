@@ -30,6 +30,9 @@ export async function signInAction(_prev: string | null, formData: FormData) {
 
 export async function signUpAction(_prev: string | null, formData: FormData) {
   const next = nextPath(formData.get("next"));
+  if (String(formData.get("website") ?? "").trim()) {
+    return "We could not create that kitchen. Try again in a moment.";
+  }
   try {
     await createUser({
       email: String(formData.get("email") ?? ""),

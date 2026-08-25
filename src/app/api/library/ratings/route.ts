@@ -2,7 +2,7 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z, ZodError } from "zod";
 import { currentAccount } from "@/server/accounts/session";
-import { RatingError, upsertRating } from "@/server/community/store";
+import { RatingError, getRatingSummary, upsertRating } from "@/server/community/store";
 import { getVisibleBySlug } from "@/server/library/store";
 import { log } from "@/server/log";
 
@@ -14,6 +14,7 @@ const bodySchema = z.object({
   ease: z.number().int().min(1).max(5),
   wouldMakeAgain: z.boolean(),
   comment: z.string().max(600).optional(),
+  website: z.string().max(200).optional(),
 });
 
 export async function POST(request: Request) {
@@ -32,6 +33,10 @@ export async function POST(request: Request) {
         { code: "not_found", message: "We could not find that recipe." },
         { status: 404 },
       );
+    }
+    if (body.website?.trim()) {
+      log.warn("library.rating_ignored", { slug: recipe.slug, signedIn: true });
+      return NextResponse.json({ summary: await getRatingSummary(recipe.slug) });
     }
     const result = await upsertRating({
       slug: recipe.slug,
@@ -65,7 +70,12 @@ export async function POST(request: Request) {
       );
     }
     if (error instanceof RatingError) {
-      const status = error.code === "owner_cannot_rate" || error.code === "not_rateable" ? 403 : 400;
+      const status =
+        error.code === "rate_limited"
+          ? 429
+          : error.code === "owner_cannot_rate" || error.code === "not_rateable"
+            ? 403
+            : 400;
       return NextResponse.json({ code: error.code, message: error.message }, { status });
     }
     return NextResponse.json(

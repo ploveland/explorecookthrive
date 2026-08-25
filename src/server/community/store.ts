@@ -2,8 +2,9 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 import { getUserById } from "@/server/accounts/users";
+import { COMMENT_REJECTED_MESSAGE, moderateComment } from "./moderate";
+import { canWriteRating, recordRatingWrite } from "./rate-limit";
 import {
-  cleanComment,
   emptySummary,
   summarizeRatings,
   type PublicReview,
@@ -34,7 +35,12 @@ const fileSchema = z.object({
 
 export class RatingError extends Error {
   constructor(
-    public readonly code: "owner_cannot_rate" | "not_rateable" | "invalid_input",
+    public readonly code:
+      | "owner_cannot_rate"
+      | "not_rateable"
+      | "invalid_input"
+      | "blocked_comment"
+      | "rate_limited",
     message: string,
   ) {
     super(message);
@@ -91,9 +97,10 @@ export async function getUserRating(slug: string, userId: string): Promise<Recip
 
 export async function listPublicReviews(slug: string): Promise<PublicReview[]> {
   const ratings = await readFileRatings(slug);
-  const withComments = ratings.filter((rating) => rating.comment);
   const reviews = await Promise.all(
-    withComments.map(async (rating) => {
+    ratings.map(async (rating) => {
+      const moderated = moderateComment(rating.comment);
+      if (!moderated.ok || !moderated.comment) return null;
       const user = await getUserById(rating.userId);
       return {
         userId: rating.userId,
@@ -103,12 +110,14 @@ export async function listPublicReviews(slug: string): Promise<PublicReview[]> {
         similarity: rating.similarity,
         ease: rating.ease,
         wouldMakeAgain: rating.wouldMakeAgain,
-        comment: rating.comment!,
+        comment: moderated.comment,
         updatedAt: rating.updatedAt,
       };
     }),
   );
-  return reviews.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  return reviews
+    .filter((review): review is PublicReview => review !== null)
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
 export async function upsertRating(input: {
@@ -123,8 +132,8 @@ export async function upsertRating(input: {
   wouldMakeAgain: boolean;
   comment?: string | null;
 }): Promise<{ rating: RecipeRating; summary: RatingSummary }> {
-  if (input.visibility === "private") {
-    throw new RatingError("not_rateable", "Private recipes are not part of the community shelf.");
+  if (input.visibility !== "public") {
+    throw new RatingError("not_rateable", "Only public Thrive Versions can be rated by other kitchens.");
   }
   if (input.ownerId && input.ownerId === input.userId) {
     throw new RatingError(
@@ -155,6 +164,18 @@ export async function upsertRating(input: {
     );
   }
 
+  const moderated = moderateComment(input.comment);
+  if (!moderated.ok) {
+    throw new RatingError("blocked_comment", COMMENT_REJECTED_MESSAGE);
+  }
+
+  if (!(await canWriteRating(input.userId))) {
+    throw new RatingError(
+      "rate_limited",
+      "That is enough ratings for now. Come back later if you cooked another Thrive Version.",
+    );
+  }
+
   const now = new Date().toISOString();
   const ratings = await readFileRatings(input.slug);
   const existing = ratings.find((rating) => rating.userId === input.userId);
@@ -165,7 +186,7 @@ export async function upsertRating(input: {
     similarity: parsed.data.similarity,
     ease: parsed.data.ease,
     wouldMakeAgain: parsed.data.wouldMakeAgain,
-    comment: cleanComment(input.comment),
+    comment: moderated.comment,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };
@@ -173,6 +194,7 @@ export async function upsertRating(input: {
     ? ratings.map((item) => (item.userId === input.userId ? rating : item))
     : [...ratings, rating];
   await writeFileRatings(input.slug, next);
+  await recordRatingWrite(input.userId);
   return { rating, summary: summarizeRatings(input.slug, next) };
 }
 
