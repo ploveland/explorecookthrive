@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     log.info("convert.job_started", {
       jobId: job.id,
       signedIn: Boolean(gated.userId),
-      remaining: gated.remaining - 1,
+      remaining: gated.remaining == null ? null : Math.max(0, gated.remaining - 1),
     });
     return NextResponse.json({ jobId: job.id, status: job.status });
   } catch (error) {

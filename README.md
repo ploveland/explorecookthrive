@@ -4,7 +4,7 @@ Keep the flavor. Improve the recipe.
 
 Explore Cook Thrive takes a recipe you already love — pasted or imported from a URL — and looks for nutrition upgrades that respect flavor, texture, and technique. It is not a generic “healthy recipe generator.”
 
-This repository is in **Phase 8**: the conversion kitchen plus community cook notes. Paste or import a recipe, convert it, see USDA estimates, then sign in to publish, favorite, collect, and rate. Browse the library by tag or USDA per-serving bounds (calories, protein, fiber, sodium). Public Thrive pages get sitemap, robots, Recipe JSON-LD, and an optional Community Tested badge. On a Thrive Version you can scale servings; per-serving USDA numbers stay put and ingredient amounts move with the pot. Convert, kitchen, and account routes are `noindex`. Guests get 2 conversions; signed-in kitchens get 10 per UTC day. The language model never invents calorie numbers.
+This repository is in **Phase 8**: the conversion kitchen plus community cook notes. Paste or import a recipe, convert it, see USDA estimates, then sign in to publish, favorite, collect, and rate. Browse the library by tag or USDA per-serving bounds (calories, protein, fiber, sodium). Public Thrive pages get sitemap, robots, Recipe JSON-LD, and an optional Community Tested badge. On a Thrive Version you can scale servings; per-serving USDA numbers stay put and ingredient amounts move with the pot. Convert, kitchen, and account routes are `noindex`. Conversions are unlimited for now (set `CONVERT_GUEST_LIMIT` and `CONVERT_AUTH_DAILY_LIMIT` to restore caps). The language model never invents calorie numbers.
 
 Paste a recipe or a URL on the homepage. We structure it (JSON-LD first for URLs), you confirm the reading, then we convert it. After a Thrive Version, you can change goals, closeness, or dietary needs and thrive the same original again. The kitchen groups every Thrive Version of that original (Version 1, 2, …) so you can open any of them and compare two side by side (USDA estimates, ingredients, and what changed from the original). Without `OPENAI_API_KEY`, conversions use a local culinary mock so the loop is still usable.
 
@@ -35,6 +35,8 @@ Drafts, conversion jobs, published recipes, accounts, favorites, collections, an
 | `OPENAI_API_KEY` | If empty, conversions use the local culinary mock |
 | `OPENAI_MODEL` | Defaults to `gpt-4.1-mini` |
 | `CONVERT_STAGE_DELAY_MS` | Optional pause between job stages (default 350) |
+| `CONVERT_GUEST_LIMIT` | Guest conversion cap. `0` or empty = unlimited |
+| `CONVERT_AUTH_DAILY_LIMIT` | Signed-in conversions per UTC day. `0` or empty = unlimited |
 | `USDA_FDC_API_KEY` | Optional. Live USDA FoodData Central lookup. If empty, a local USDA-derived catalog is used |
 | `AUTH_SECRET` | Auth.js secret. Required in production; a local fallback is used if empty |
 | `AUTH_URL` | Auth.js base URL. Defaults to the local app |

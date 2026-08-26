@@ -1,9 +1,26 @@
-export const GUEST_CONVERSION_LIMIT = 2;
-export const AUTH_DAILY_LIMIT = 10;
+import { env } from "../env";
 
 export type ConversionGate =
   | { ok: true }
   | { ok: false; code: "sign_in_required" | "daily_limit"; message: string };
+
+function readLimit(name: string, fallback: number) {
+  const raw = env(name);
+  if (!raw) return fallback;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value < 0) return fallback;
+  return Math.floor(value);
+}
+
+/** 0 means unlimited. Default is open while the kitchen is growing. */
+export function guestConversionLimit() {
+  return readLimit("CONVERT_GUEST_LIMIT", 0);
+}
+
+/** 0 means unlimited. Default is open while the kitchen is growing. */
+export function authDailyLimit() {
+  return readLimit("CONVERT_AUTH_DAILY_LIMIT", 0);
+}
 
 export function conversionGate(input: {
   userId: string | null;
@@ -11,7 +28,8 @@ export function conversionGate(input: {
   userConversionsToday: number;
 }): ConversionGate {
   if (input.userId) {
-    if (input.userConversionsToday >= AUTH_DAILY_LIMIT) {
+    const cap = authDailyLimit();
+    if (cap > 0 && input.userConversionsToday >= cap) {
       return {
         ok: false,
         code: "daily_limit",
@@ -21,11 +39,12 @@ export function conversionGate(input: {
     return { ok: true };
   }
 
-  if (input.guestConversions >= GUEST_CONVERSION_LIMIT) {
+  const cap = guestConversionLimit();
+  if (cap > 0 && input.guestConversions >= cap) {
     return {
       ok: false,
       code: "sign_in_required",
-      message: "Create a free kitchen to keep converting. The first two recipes stay with you.",
+      message: "Create a free kitchen to keep converting. Guest conversions stay with you after you sign in.",
     };
   }
   return { ok: true };
@@ -35,9 +54,15 @@ export function remainingConversions(input: {
   userId: string | null;
   guestConversions: number;
   userConversionsToday: number;
-}) {
-  if (input.userId) return Math.max(0, AUTH_DAILY_LIMIT - input.userConversionsToday);
-  return Math.max(0, GUEST_CONVERSION_LIMIT - input.guestConversions);
+}): number | null {
+  if (input.userId) {
+    const cap = authDailyLimit();
+    if (cap === 0) return null;
+    return Math.max(0, cap - input.userConversionsToday);
+  }
+  const cap = guestConversionLimit();
+  if (cap === 0) return null;
+  return Math.max(0, cap - input.guestConversions);
 }
 
 export function isSameUtcDay(iso: string, now = new Date()) {

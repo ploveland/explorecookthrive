@@ -25,6 +25,11 @@ services:
         value: gpt-4.1-mini
       - key: CONVERT_STAGE_DELAY_MS
         value: "350"
+      # 0 = unlimited. Raise these later to restore guest/daily caps.
+      - key: CONVERT_GUEST_LIMIT
+        value: "0"
+      - key: CONVERT_AUTH_DAILY_LIMIT
+        value: "0"
       - key: AUTH_SECRET
         generateValue: true
         sync: false

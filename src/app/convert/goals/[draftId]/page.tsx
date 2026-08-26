@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { ConvertGoalsForm } from "@/components/convert-goals-form";
 import { gateConversion } from "@/server/accounts/session";
+import { authDailyLimit, guestConversionLimit } from "@/server/accounts/policy";
 import { getJob } from "@/server/convert/jobs";
 import { getDraft } from "@/server/drafts/store";
 
@@ -32,13 +33,16 @@ export default async function ConvertGoalsPage({
           ? "Update the goals, how close it should stay, or dietary needs. We will write a new Thrive Version from the same original. The last private result stays in your kitchen."
           : "Tell us what better means for this dish. We will protect the parts that make it itself."}
       </p>
-      {conversion.userId ? (
+      {conversion.remaining == null ? (
+        <p className="text-sm text-teal/70">Conversions are open while we grow the kitchen.</p>
+      ) : conversion.userId ? (
         <p className="text-sm text-teal/70">
-          {conversion.remaining} of 10 conversions left today.
+          {conversion.remaining} of {authDailyLimit()} conversions left today.
         </p>
       ) : (
         <p className="text-sm text-teal/70">
-          {conversion.remaining} of 2 guest conversions left. Sign in to keep a kitchen.
+          {conversion.remaining} of {guestConversionLimit()} guest conversions left. Sign in to keep a
+          kitchen.
         </p>
       )}
       <ConvertGoalsForm

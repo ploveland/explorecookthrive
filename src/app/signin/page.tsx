@@ -22,7 +22,7 @@ export default async function SignInPage({
       <h1 className="font-heading text-4xl text-teal">Sign in to your kitchen</h1>
       <p className="text-lg leading-8 text-teal/80">
         {limited
-          ? "The first two conversions are open. Sign in to keep going, save favorites, and publish."
+          ? "Sign in to keep converting, save favorites, and publish."
           : reset
             ? "Your password is updated. Sign in with the new one."
             : googleFailure

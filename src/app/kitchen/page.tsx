@@ -3,6 +3,7 @@ import { KitchenNav } from "@/components/kitchen-nav";
 import { KitchenHistory } from "@/components/kitchen-history";
 import { Button } from "@/components/ui/button";
 import { currentAccount } from "@/server/accounts/session";
+import { guestConversionLimit } from "@/server/accounts/policy";
 import { listJobsForAccount } from "@/server/convert/jobs";
 import { indexPublishedSlugs } from "@/server/library/store";
 
@@ -18,10 +19,13 @@ export default async function KitchenPage() {
       <KitchenNav />
       {!account.user ? (
         <p className="rounded-2xl bg-sage/15 px-4 py-3 text-sm text-teal ring-1 ring-sage/40">
-          Two conversions without an account. After that we will ask you to sign in.{" "}
+          {guestConversionLimit() > 0
+            ? "A few conversions without an account. After that we will ask you to sign in. "
+            : "Guest conversions land here for a while. "}
           <Link className="font-medium underline-offset-4 hover:underline" href="/signin?next=/kitchen">
             Sign in
-          </Link>
+          </Link>{" "}
+          to keep them, favorite recipes, and publish.
         </p>
       ) : null}
 
