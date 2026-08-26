@@ -9,12 +9,14 @@ import { CommunityBadge } from "@/components/community-badge";
 import { JumpToRecipe } from "@/components/jump-to-recipe";
 import { RecipeRatingPanel } from "@/components/recipe-rating";
 import { RecipeSaveBar } from "@/components/recipe-save-bar";
+import { RecipeShare } from "@/components/recipe-share";
 import { ScaledRecipe } from "@/components/scaled-recipe";
 import { VisibilityControl } from "@/components/visibility-control";
 import { listCollections } from "@/server/accounts/collections";
 import { isFavorite } from "@/server/accounts/favorites";
 import { currentAccount } from "@/server/accounts/session";
 import { getRatingSummary, getUserRating, listPublicReviews } from "@/server/community/store";
+import { recipeIsShareable, recipeShareUrl } from "@/server/library/share";
 import { getVisibleBySlug } from "@/server/library/store";
 import { recipeJsonLd, shouldIndexRecipe } from "@/server/seo/jsonld";
 import { siteUrl } from "@/server/seo/site";
@@ -129,6 +131,14 @@ export default async function PublishedRecipePage({
         favorited={favorited}
         collections={collections}
       />
+
+      {recipeIsShareable(recipe.visibility) ? (
+        <RecipeShare
+          title={recipe.title}
+          url={recipeShareUrl(recipe.slug)}
+          visibility={recipe.visibility}
+        />
+      ) : null}
 
       <RecipeRatingPanel
         slug={recipe.slug}

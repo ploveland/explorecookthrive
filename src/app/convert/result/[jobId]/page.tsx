@@ -3,6 +3,7 @@ import { ConvertResult } from "@/components/convert-result";
 import { currentAccount } from "@/server/accounts/session";
 import { getJob, listRelatedJobs } from "@/server/convert/jobs";
 import { completeVersions, versionNumberFor } from "@/server/convert/versions";
+import { recipeIsShareable, recipeShareUrl } from "@/server/library/share";
 import { getPublishedByJobId } from "@/server/library/store";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +37,11 @@ export default async function ConvertResultPage({
       <ConvertResult
         job={{ ...job, output: job.output }}
         publishedSlug={published?.slug ?? null}
+        shareUrl={
+          published && recipeIsShareable(published.visibility)
+            ? recipeShareUrl(published.slug)
+            : null
+        }
         signedIn={Boolean(account.userId)}
         versionNumber={versionNumber}
         siblings={siblings}

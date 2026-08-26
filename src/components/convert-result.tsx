@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ConvertNutrition } from "@/components/convert-nutrition";
 import { JumpToRecipe } from "@/components/jump-to-recipe";
 import { PublishThriveForm } from "@/components/publish-thrive-form";
+import { RecipeShare } from "@/components/recipe-share";
 import { ScaledRecipe } from "@/components/scaled-recipe";
 import {
   DIETARY_COPY,
@@ -38,12 +39,14 @@ function IngredientList({
 export function ConvertResult({
   job,
   publishedSlug,
+  shareUrl = null,
   signedIn = false,
   versionNumber = null,
   siblings = [],
 }: {
   job: ConversionJob & { output: ConversionOutput; recipe: ExtractedRecipe };
   publishedSlug?: string | null;
+  shareUrl?: string | null;
   signedIn?: boolean;
   versionNumber?: number | null;
   siblings?: ThriveVersionSummary[];
@@ -161,6 +164,9 @@ export function ConvertResult({
         publishedSlug={publishedSlug ?? null}
         signedIn={signedIn}
       />
+      {shareUrl && publishedSlug ? (
+        <RecipeShare title={output.thriveVersion.title} url={shareUrl} />
+      ) : null}
 
       <p className="text-sm text-teal/70">
         Taste impact: {output.analysis.tasteImpact}. Not the result you wanted? Change the goals
