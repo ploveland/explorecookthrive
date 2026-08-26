@@ -37,6 +37,14 @@ function includesPhrase(haystack: string, needle: string) {
   return haystack.toLowerCase().includes(needle.toLowerCase());
 }
 
+function normalizeLine(text: string) {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function recipeFingerprint(ingredients: string[], instructions: string[]) {
+  return [...ingredients, ...instructions].map(normalizeLine).filter(Boolean).join("\n");
+}
+
 function blobFromOutput(output: ConversionOutput) {
   return JSON.stringify(output).toLowerCase();
 }
@@ -123,6 +131,25 @@ export function scoreConversion(evalCase: EvalCase, output: ConversionOutput): E
         detail: `Change "${change.original}" is missing nutrition, flavor, or texture rationale.`,
       });
     }
+  }
+
+  if (output.changes.length === 0) {
+    deductions.push({
+      rule: "no-changes",
+      detail: "Thrive output listed no changes.",
+    });
+  }
+
+  const originalFp = recipeFingerprint(evalCase.original.ingredients, evalCase.original.instructions);
+  const thriveFp = recipeFingerprint(
+    output.thriveVersion.ingredients.map((item) => item.rawText),
+    output.thriveVersion.instructions,
+  );
+  if (originalFp === thriveFp) {
+    deductions.push({
+      rule: "no-rewrite",
+      detail: "Thrive Version copied the original ingredients and method without rewriting them.",
+    });
   }
 
   return {

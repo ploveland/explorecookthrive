@@ -174,7 +174,7 @@ export const conversionJobSchema = z.object({
 
 export type ConversionJob = z.infer<typeof conversionJobSchema>;
 
-export const PROMPT_VERSION = "thrive-conversion-v1";
+export const PROMPT_VERSION = "thrive-conversion-v2";
 
 export const ACTIVE_JOB_STAGES: { status: ConversionJobStatus; label: string }[] = [
   { status: "reading", label: "Reading the recipe you confirmed" },

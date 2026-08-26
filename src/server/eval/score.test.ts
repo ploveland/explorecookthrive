@@ -177,4 +177,40 @@ describe("conversion eval suite", () => {
     expect(result.pass).toBe(false);
     expect(result.deductions.some((item) => item.rule === "medical-claim")).toBe(true);
   });
+
+  it("fails a Thrive Version that copies the original recipe unchanged", () => {
+    const chili = cases.find((item) => item.id === "chili-no-invented-ingredients")!;
+    const result = scoreConversion(
+      chili,
+      baseOutput({
+        thriveVersion: {
+          title: chili.original.title,
+          description: "Copied.",
+          servings: 4,
+          prepMinutes: 15,
+          cookMinutes: 40,
+          ingredients: chili.original.ingredients.map((rawText) => ({
+            rawText,
+            name: rawText,
+            quantity: null,
+            unit: null,
+            preparation: null,
+            assumptionNote: null,
+          })),
+          instructions: chili.original.instructions,
+        },
+        changes: [
+          {
+            original: "The original pot",
+            suggested: "Leave it",
+            nutritionReason: "No change.",
+            flavorEffect: "The same.",
+            textureEffect: "The same.",
+          },
+        ],
+      }),
+    );
+    expect(result.pass).toBe(false);
+    expect(result.deductions.some((item) => item.rule === "no-rewrite")).toBe(true);
+  });
 });

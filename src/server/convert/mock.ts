@@ -5,7 +5,16 @@ import type { ConvertRecipeInput, NutritionGoalId } from "./schema";
 type ThriveIngredient = ConversionOutput["thriveVersion"]["ingredients"][number];
 type Change = ConversionOutput["changes"][number];
 type Keep = ConversionOutput["analysis"]["wouldNotChange"][number];
-type DishKind = "biscuits" | "carbonara" | "fried_chicken" | "chili" | "cake" | "other";
+type DishKind =
+  | "biscuits"
+  | "carbonara"
+  | "fried_chicken"
+  | "chili"
+  | "cake"
+  | "chowder"
+  | "sandwich"
+  | "pasta"
+  | "other";
 
 function haystack(input: ConvertRecipeInput) {
   return `${input.title}\n${input.ingredients.map((item) => item.rawText).join("\n")}\n${input.instructions.join("\n")}`.toLowerCase();
@@ -18,6 +27,9 @@ function detectKind(input: ConvertRecipeInput): DishKind {
   if (/fried chicken/.test(text)) return "fried_chicken";
   if (/\bchili\b|\bchilli\b/.test(text)) return "chili";
   if (/\bcake\b/.test(text) && /cocoa|chocolate|sugar/.test(text)) return "cake";
+  if (/chowder|bisque|\bcream soup\b/.test(text)) return "chowder";
+  if (/muffuletta|po.?boy|sandwich/.test(text)) return "sandwich";
+  if (/\bpasta\b|spaghetti|linguine|fettuccine|lasagna/.test(text)) return "pasta";
   return "other";
 }
 
@@ -40,7 +52,7 @@ function thriveFrom(
   };
 }
 
-function added(rawText: string, assumptionNote: string): ThriveIngredient {
+function fromRaw(rawText: string, assumptionNote: string | null = null): ThriveIngredient {
   const parsed = parseIngredientLine(rawText);
   return {
     rawText,
@@ -50,6 +62,29 @@ function added(rawText: string, assumptionNote: string): ThriveIngredient {
     preparation: parsed.preparation,
     assumptionNote,
   };
+}
+
+function looksLike(item: ThriveIngredient, pattern: RegExp) {
+  return pattern.test(`${item.name} ${item.rawText}`.toLowerCase());
+}
+
+function originalIngredients(input: ConvertRecipeInput): ThriveIngredient[] {
+  return input.ingredients.map((item) => thriveFrom(item));
+}
+
+function replaceMatching(
+  ingredients: ThriveIngredient[],
+  pattern: RegExp,
+  replacement: ThriveIngredient | ThriveIngredient[],
+): ThriveIngredient[] {
+  let replaced = false;
+  return ingredients.flatMap((item) => {
+    if (!replaced && looksLike(item, pattern)) {
+      replaced = true;
+      return Array.isArray(replacement) ? replacement : [replacement];
+    }
+    return [item];
+  });
 }
 
 function tasteImpactFor(
@@ -120,6 +155,12 @@ function keepWhatMatters(input: ConvertRecipeInput, kind: DishKind): Keep[] {
     keep("sugar", "Sugar is moisture and structure in this batter, not just sweetness.");
     keep("cocoa", "Cocoa is the chocolate. It stays.");
   }
+  if (kind === "chowder" && /cream|half-and-half/.test(text)) {
+    keep("cream", "Some dairy fat is why chowder tastes like chowder.");
+  }
+  if (kind === "sandwich" && /bread|roll|loaf|muffuletta/.test(text)) {
+    keep("bread", "The bread is the architecture.");
+  }
   if (items.length === 0) {
     const first = input.ingredients[0];
     keep(
@@ -130,26 +171,23 @@ function keepWhatMatters(input: ConvertRecipeInput, kind: DishKind): Keep[] {
   return items;
 }
 
-function forKind(
-  input: ConvertRecipeInput,
-  kind: DishKind,
-): { extras: ThriveIngredient[]; changes: Change[]; steps: string[] } {
-  const extras: ThriveIngredient[] = [];
+type Built = {
+  ingredients: ThriveIngredient[];
+  instructions: string[];
+  changes: Change[];
+};
+
+function forKind(input: ConvertRecipeInput, kind: DishKind): Built {
+  let ingredients = originalIngredients(input);
   const changes: Change[] = [];
-  const steps: string[] = [];
+  let instructions: string[] = input.instructions.map((step) => step.trim()).filter(Boolean);
 
   if (kind === "biscuits") {
-    changes.push({
-      original: "Scooping flour by volume",
-      suggested: "Weigh 240g flour so an extra quarter-cup does not sneak in",
-      nutritionReason: "A packed cup of flour quietly adds starch.",
-      flavorEffect: "The buttermilk and butter still lead.",
-      textureEffect: "Still tender and flaky, a little less dense.",
-    });
     if (wants(input, "more_fiber") || wants(input, "healthier_overall")) {
-      extras.push(
-        added("1/2 cup white whole wheat flour", "Used for part of the all-purpose flour."),
-      );
+      ingredients = replaceMatching(ingredients, /all-purpose flour|^flour$|\bflour\b/, [
+        fromRaw("1 1/2 cups all-purpose flour", "Most of the original two cups."),
+        fromRaw("1/2 cup white whole wheat flour", "Used for part of the all-purpose flour."),
+      ]);
       changes.push({
         original: "All all-purpose flour",
         suggested: "Use some white whole wheat flour in the mix",
@@ -158,11 +196,22 @@ function forKind(
         textureEffect: "Keep the butter cold so the flake survives the second flour.",
       });
     }
-    steps.push("Weigh the flour. Keep the butter in cold shards.");
+    changes.push({
+      original: "Scooping flour by volume",
+      suggested: "Weigh about 240g flour total so an extra quarter-cup does not sneak in",
+      nutritionReason: "A packed cup of flour quietly adds starch.",
+      flavorEffect: "The buttermilk and butter still lead.",
+      textureEffect: "Still tender and flaky, a little less dense.",
+    });
+    instructions = [
+      "Weigh the flours (about 240g total) and whisk with baking powder and salt.",
+      "Cut cold butter into the flour until the pieces are pea-sized. Keep the butter in cold shards.",
+      "Stir in buttermilk, fold, cut, and bake hot.",
+    ];
   }
 
   if (kind === "carbonara") {
-    extras.push(added("1/2 cup pasta water", "Starchy cooking water, reserved from the pot."));
+    ingredients = [...ingredients, fromRaw("1/2 cup reserved pasta water", "Starchy water from the pasta pot.")];
     changes.push({
       original: "Sauce made only from yolks and cheese",
       suggested: "Loosen the emulsion with pasta water off the heat",
@@ -170,11 +219,14 @@ function forKind(
       flavorEffect: "Still egg, pecorino, pepper, and guanciale.",
       textureEffect: "Glossier sauce that clings instead of clumping.",
     });
-    steps.push("Reserve pasta water. Toss off the heat so the yolks do not scramble.");
+    instructions = [
+      "Render the guanciale until the fat runs and the edges crisp.",
+      "Cook the spaghetti in salted water. Reserve 1/2 cup pasta water, then drain.",
+      "Toss the hot pasta with yolks, pecorino, black pepper, and pasta water off the heat until the sauce silks. Do not scramble the eggs.",
+    ];
   }
 
   if (kind === "fried_chicken") {
-    extras.push(added("1 instant-read thermometer", "For oil temperature, not part of the crust."));
     changes.push({
       original: "Frying without watching oil temperature",
       suggested: "Hold the oil at a steady fry temperature and drain on a rack",
@@ -182,7 +234,12 @@ function forKind(
       flavorEffect: "Seasoned crust and buttermilk soak still lead.",
       textureEffect: "Crisp, not greasy. The crust stays.",
     });
-    steps.push("Fry at a steady temperature. Drain on a rack, not a piled plate.");
+    instructions = [
+      "Soak the chicken in buttermilk.",
+      "Dredge in seasoned flour.",
+      "Fry in oil held around 325–350°F until the crust is deep gold and the meat is cooked through.",
+      "Drain on a rack, not a piled plate, so extra fat runs off and the crust stays crisp.",
+    ];
   }
 
   if (kind === "chili") {
@@ -191,16 +248,27 @@ function forKind(
       wants(input, "higher_protein") ||
       wants(input, "healthier_overall")
     ) {
-      extras.push(added("1 can black beans, drained", "A second bean that already belongs in chili."));
+      ingredients = replaceMatching(
+        ingredients,
+        /ground beef|\bbeef\b/,
+        fromRaw("12 ounces ground beef", "A little less meat so the beans can do more work."),
+      );
+      ingredients = [
+        ...ingredients,
+        fromRaw("1 can black beans, drained", "A second bean that already belongs in chili."),
+      ];
       changes.push({
-        original: "One can of beans",
-        suggested: "Add black beans alongside the kidney beans",
-        nutritionReason: "More fiber and protein in a pot that already knows beans.",
+        original: "A full pound of beef and one can of beans",
+        suggested: "Use 12 ounces of beef and add black beans alongside the kidney beans",
+        nutritionReason: "More fiber and protein in a pot that already knows beans, without a heavier meat load.",
         flavorEffect: "Still chili-powder forward, with a little more earthiness.",
         textureEffect: "Heartier spoonfuls, same simmer.",
       });
     }
-    extras.push(added("1 bell pepper, diced", "A supporting vegetable, not a replacement for beef."));
+    ingredients = [
+      ...ingredients,
+      fromRaw("1 bell pepper, diced", "A supporting vegetable, not a replacement for beef."),
+    ];
     changes.push({
       original: "Beef, onion, and tomatoes only",
       suggested: "Sweat a bell pepper with the onion",
@@ -208,13 +276,23 @@ function forKind(
       flavorEffect: "Sweet pepper in the background. Chili powder still leads.",
       textureEffect: "Same stew, a bit more vegetation in the bite.",
     });
-    steps.push("Brown the beef well. Simmer until the fat and spices marry.");
+    instructions = [
+      "Brown the beef well with the onion and bell pepper.",
+      "Stir in chili powder and garlic until fragrant.",
+      "Add tomatoes and both beans. Simmer until the fat and spices marry.",
+    ];
   }
 
   if (kind === "cake") {
-    extras.push(
-      added("1 teaspoon espresso powder", "Deepens cocoa; it should not taste like coffee dessert."),
+    ingredients = replaceMatching(
+      ingredients,
+      /\bsugar\b/,
+      fromRaw("1 3/4 cups sugar", "A modest cut from a packed 2 cups. Sugar still builds the crumb."),
     );
+    ingredients = [
+      ...ingredients,
+      fromRaw("1 teaspoon espresso powder", "Deepens cocoa; it should not taste like coffee dessert."),
+    ];
     changes.push({
       original: "The full packed measure of sugar as the only lever",
       suggested:
@@ -223,20 +301,96 @@ function forKind(
       flavorEffect: "Chocolate stays loud.",
       textureEffect: "Still a layer cake, not a rubbery sponge.",
     });
-    steps.push("Bloom cocoa with hot liquid. Do not overbake.");
+    instructions = [
+      "Bloom the cocoa with hot liquid and espresso powder.",
+      "Cream, mix, and bake in two pans. Do not overbake.",
+      "Cool and frost.",
+    ];
   }
 
-  return { extras, changes, steps };
+  if (kind === "chowder") {
+    const hadCream = ingredients.some((item) => looksLike(item, /heavy cream|whipping cream|half-and-half|\bcream\b/));
+    if (hadCream) {
+      ingredients = replaceMatching(ingredients, /heavy cream|whipping cream|half-and-half|\bcream\b/, [
+        fromRaw("1/2 cup heavy cream", "Enough dairy fat so it still tastes like chowder."),
+        fromRaw("1 cup whole milk or seafood stock", "Carries the simmer so the pot is not all cream."),
+      ]);
+      changes.push({
+        original: "Cream as most of the liquid",
+        suggested: "Simmer in stock or milk and finish with a smaller pour of cream",
+        nutritionReason: "Keeps the lush finish without using cream as the whole broth.",
+        flavorEffect: "Still a cream chowder. The seafood and aromatics stay in front.",
+        textureEffect: "Silky, not gluey. The potatoes or crackers still thicken it.",
+      });
+    }
+    changes.push({
+      original: "Salt added from habit",
+      suggested: "Measure the salt and finish with lemon or the cooking liquor from the seafood",
+      nutritionReason: "Chowder gets salty fast from clams, stock, and dairy.",
+      flavorEffect: "The dish should taste briny and sweet, not like a salt lick.",
+      textureEffect: "No change to the body of the soup.",
+    });
+    instructions = [
+      "Sweat the onion and celery in the butter until they smell sweet. Do not brown them hard.",
+      "Build the soup in stock or milk with the potatoes and seafood.",
+      "Finish with the cream off a hard boil. Taste, then add a measured pinch of salt and a squeeze of lemon if it needs lift.",
+    ];
+  }
+
+  if (kind === "sandwich") {
+    if (wants(input, "lower_calories") || wants(input, "lower_sodium") || wants(input, "healthier_overall")) {
+      ingredients = ingredients.map((item) => {
+        if (!looksLike(item, /salami|mortadella|ham|capicola|cured|prosciutto/)) return item;
+        return fromRaw(
+          `${item.rawText} (about three-quarters of a thick deli stack)`,
+          "Keep the meats that make this sandwich. Use a slightly thinner layer.",
+        );
+      });
+      changes.push({
+        original: "A piled stack of cured meats",
+        suggested: "Keep every signature meat, in a slightly thinner layer",
+        nutritionReason: "Cured meats carry salt and fat. A little less still tastes like the sandwich.",
+        flavorEffect: "Olive salad, bread, and the mixed meats still lead.",
+        textureEffect: "Easier to bite. The bread does not collapse.",
+      });
+    }
+    changes.push({
+      original: "The filling as an afterthought to the bread",
+      suggested: "Keep the olive salad or pickle relish generous; that is the flavor architecture",
+      nutritionReason: "Acid and herbs season the sandwich so you need less meat for the same punch.",
+      flavorEffect: "Still the original sandwich, not a diet wrap.",
+      textureEffect: "Juicy, not soggy, if you do not soak the bread overnight unless the original does.",
+    });
+    instructions = [
+      "Keep the bread and the signature condiment (olive salad, giardiniera, or slaw) as written.",
+      "Layer the meats a little thinner than a deli pile, then close the sandwich so it still eats like itself.",
+    ];
+  }
+
+  if (kind === "pasta") {
+    ingredients = [
+      ...ingredients,
+      fromRaw("1/2 cup reserved pasta water", "Starchy water from the pasta pot."),
+    ];
+    changes.push({
+      original: "Sauce finished in the pan with extra fat or cheese to make it cling",
+      suggested: "Finish the pasta in the sauce with pasta water off a hard boil",
+      nutritionReason: "Starch helps the sauce coat, so you need less extra fat or cheese.",
+      flavorEffect: "The original sauce still leads.",
+      textureEffect: "Glossy noodles, not a slick of oil in the bowl.",
+    });
+    instructions = [
+      "Cook the pasta in well-salted water. Reserve 1/2 cup pasta water.",
+      "Finish the noodles in the sauce with pasta water until they are coated. Serve at once.",
+    ];
+  }
+
+  return { ingredients, instructions, changes };
 }
 
-function genericMoves(input: ConvertRecipeInput): {
-  extras: ThriveIngredient[];
-  changes: Change[];
-  steps: string[];
-} {
-  const extras: ThriveIngredient[] = [];
+function genericMoves(input: ConvertRecipeInput): Built {
+  let ingredients = originalIngredients(input);
   const changes: Change[] = [];
-  const steps: string[] = [];
   const text = haystack(input);
 
   if (/flour/.test(text)) {
@@ -250,6 +404,10 @@ function genericMoves(input: ConvertRecipeInput): {
   }
 
   if (wants(input, "lower_sodium") || /\bsalt\b/.test(text)) {
+    ingredients = ingredients.map((item) => {
+      if (!looksLike(item, /\bsalt\b|kosher salt|sea salt/)) return item;
+      return fromRaw(item.rawText, "Measure this. Taste before you add another pinch.");
+    });
     changes.push({
       original: "Salt added from habit",
       suggested: "Measure the salt and finish with acid or herbs if it needs lift",
@@ -273,6 +431,14 @@ function genericMoves(input: ConvertRecipeInput): {
   }
 
   if (wants(input, "lower_added_sugar") && /sugar/.test(text)) {
+    ingredients = replaceMatching(
+      ingredients,
+      /\bsugar\b/,
+      fromRaw(
+        ingredients.find((item) => looksLike(item, /\bsugar\b/))?.rawText ?? "sugar, slightly less than a packed cup",
+        "A slightly lighter measure where sugar is not holding the crumb up.",
+      ),
+    );
     changes.push({
       original: "Sugar as a packed, unexamined cup",
       suggested: "Use a slightly lighter measure of sugar where it is not holding the crumb up",
@@ -284,26 +450,25 @@ function genericMoves(input: ConvertRecipeInput): {
 
   if (changes.length === 0) {
     changes.push({
-      original: "Cooking from habit",
-      suggested: "Taste as you go and keep the technique that already works",
-      nutritionReason: "The highest-impact move is not adding extra the dish does not need.",
-      flavorEffect: "The original still tastes like itself.",
+      original: "Aromatics cooked on autopilot",
+      suggested: "Sweat onion, garlic, or spices until they smell like the dish before the main protein goes in",
+      nutritionReason: "Better extraction of flavor means you reach less for extra salt and fat.",
+      flavorEffect: "The original still tastes like itself, just more clearly.",
       textureEffect: "Texture stays on purpose.",
     });
-    steps.push("Cook the original method. Taste before you add more salt or fat.");
   }
 
-  return { extras, changes, steps };
+  const instructions = [
+    ...changes.map((change) => change.suggested.replace(/^\w/, (letter) => letter.toUpperCase()) + "."),
+    ...input.instructions.map((step) => step.trim()).filter(Boolean),
+  ];
+
+  return { ingredients, instructions, changes };
 }
 
 export function mockConvert(input: ConvertRecipeInput): ConversionOutput {
   const kind = detectKind(input);
-  const specific = kind === "other" ? genericMoves(input) : forKind(input, kind);
-  const fallback = kind === "other" ? { extras: [], changes: [], steps: [] } : genericMoves(input);
-
-  const extras = [...specific.extras];
-  const changes = specific.changes.length > 0 ? [...specific.changes] : [...fallback.changes];
-  const extraSteps = specific.steps.length > 0 ? [...specific.steps] : [...fallback.steps];
+  const built = kind === "other" ? genericMoves(input) : forKind(input, kind);
   const wouldNotChange = keepWhatMatters(input, kind);
   const suffix =
     input.preference === "preserve"
@@ -329,7 +494,7 @@ export function mockConvert(input: ConvertRecipeInput): ConversionOutput {
           : kind === "biscuits"
             ? ["steam from butter and gluten"]
             : ["the original structure"],
-      highImpactOpportunities: changes.map((change) => change.suggested),
+      highImpactOpportunities: built.changes.map((change) => change.suggested),
       wouldNotChange,
       tasteImpact: tasteImpactFor(input.preference),
       assumptions: [
@@ -343,9 +508,9 @@ export function mockConvert(input: ConvertRecipeInput): ConversionOutput {
       servings: input.servings && input.servings > 0 ? input.servings : 4,
       prepMinutes: input.prepMinutes,
       cookMinutes: input.cookMinutes,
-      ingredients: [...input.ingredients.map((item) => thriveFrom(item)), ...extras],
-      instructions: [...input.instructions.map((step) => step.trim()), ...extraSteps.filter(Boolean)],
+      ingredients: built.ingredients,
+      instructions: built.instructions,
     },
-    changes,
+    changes: built.changes,
   };
 }
