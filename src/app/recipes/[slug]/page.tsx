@@ -10,8 +10,10 @@ import { JumpToRecipe } from "@/components/jump-to-recipe";
 import { RecipeRatingPanel } from "@/components/recipe-rating";
 import { RecipeSaveBar } from "@/components/recipe-save-bar";
 import { RecipeShare } from "@/components/recipe-share";
+import { RecipeCover } from "@/components/recipe-cover";
 import { ScaledRecipe } from "@/components/scaled-recipe";
 import { VisibilityControl } from "@/components/visibility-control";
+import { coverInputFromPublished } from "@/lib/recipe-cover";
 import { listCollections } from "@/server/accounts/collections";
 import { isFavorite } from "@/server/accounts/favorites";
 import { currentAccount } from "@/server/accounts/session";
@@ -74,11 +76,15 @@ export default async function PublishedRecipePage({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(recipeJsonLd(recipe, community)) }}
         />
       ) : null}
-      <p className="text-sm font-semibold tracking-[0.18em] text-terracotta uppercase">
-        Thrive Version
-      </p>
+      <RecipeCover seed={coverInputFromPublished(recipe)} size="hero">
+        <p className="text-sm font-semibold tracking-[0.18em] text-cream/85 uppercase">
+          Thrive Version
+        </p>
+        <h1 className="font-heading mt-2 text-4xl text-balance text-cream sm:text-5xl">
+          {recipe.title}
+        </h1>
+      </RecipeCover>
       <div className="space-y-3">
-        <h1 className="font-heading text-4xl text-teal">{recipe.title}</h1>
         <p className="max-w-3xl text-lg leading-8 text-teal/80">{recipe.description}</p>
         <JumpToRecipe />
         <p className="text-sm text-teal/70">

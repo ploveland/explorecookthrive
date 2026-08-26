@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { RecipeCard } from "@/components/recipe-card";
+import { RecipeCover } from "@/components/recipe-cover";
+import { coverInputFromPublished } from "@/lib/recipe-cover";
 import type { RatingSummary } from "@/server/community/policy";
 import { getRatingSummaries } from "@/server/community/store";
 import { listPublished } from "@/server/library/store";
@@ -128,11 +130,19 @@ export async function DiscoveryRails() {
                 <ul className="mt-3 space-y-3">
                   {items.map((recipe) => (
                     <li key={recipe.id}>
-                      <Link href={`/recipes/${recipe.slug}`} className="block">
-                        <p className="font-medium text-teal underline-offset-4 hover:underline">
-                          {recipe.title}
-                        </p>
-                        <p className="mt-1 line-clamp-2 text-sm text-teal/75">{recipe.description}</p>
+                      <Link href={`/recipes/${recipe.slug}`} className="flex gap-3">
+                        <RecipeCover
+                          seed={coverInputFromPublished(recipe)}
+                          size="thumb"
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-medium text-teal underline-offset-4 hover:underline">
+                            {recipe.title}
+                          </span>
+                          <span className="mt-1 line-clamp-2 block text-sm text-teal/75">
+                            {recipe.description}
+                          </span>
+                        </span>
                       </Link>
                     </li>
                   ))}
