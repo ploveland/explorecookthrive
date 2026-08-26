@@ -1,5 +1,6 @@
 import { generateObject } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
+import { env } from "../env";
 import { log } from "../log";
 import {
   type LlmClient,
@@ -13,8 +14,8 @@ export class OpenAiLlmClient implements LlmClient {
   readonly model: string;
   private readonly apiKey: string;
 
-  constructor(model = process.env.OPENAI_MODEL ?? "gpt-4.1-mini") {
-    const apiKey = process.env.OPENAI_API_KEY;
+  constructor(model = env("OPENAI_MODEL") || "gpt-4.1-mini") {
+    const apiKey = env("OPENAI_API_KEY");
     if (!apiKey) {
       throw new LlmConfigurationError(
         "OPENAI_API_KEY is not set. Add it to .env.local before running conversions.",
@@ -75,7 +76,7 @@ export class OpenAiLlmClient implements LlmClient {
 }
 
 export function createLlmClient(): LlmClient {
-  const provider = process.env.AI_PROVIDER ?? "openai";
+  const provider = env("AI_PROVIDER") || "openai";
   if (provider === "openai") {
     return new OpenAiLlmClient();
   }

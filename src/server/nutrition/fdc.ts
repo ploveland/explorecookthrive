@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { env } from "../env";
 import { CATALOG, type CatalogFood, findCatalogFood } from "./catalog";
 import { emptyNutrients, type NutrientTotals } from "./schema";
 
@@ -25,7 +26,7 @@ type FdcSearchFood = {
 };
 
 function apiKey() {
-  return process.env.USDA_FDC_API_KEY?.trim() || "";
+  return env("USDA_FDC_API_KEY");
 }
 
 export function hasLiveFdc() {

@@ -5,10 +5,11 @@ import { cookies } from "next/headers";
 import { AUTH_NEXT_COOKIE } from "@/server/accounts/constants";
 import { googleAuthConfigured, resolveGoogleLogin } from "@/server/accounts/google";
 import { getUserByGoogleId, verifyUser } from "@/server/accounts/users";
+import { env } from "@/server/env";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
-  secret: process.env.AUTH_SECRET ?? "ect-local-dev-secret-change-me",
+  secret: env("AUTH_SECRET") || "ect-local-dev-secret-change-me",
   session: { strategy: "jwt" },
   pages: { signIn: "/signin", error: "/signin" },
   providers: [
@@ -28,8 +29,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     ...(googleAuthConfigured()
       ? [
           Google({
-            clientId: process.env.AUTH_GOOGLE_ID!,
-            clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+            clientId: env("AUTH_GOOGLE_ID"),
+            clientSecret: env("AUTH_GOOGLE_SECRET"),
           }),
         ]
       : []),

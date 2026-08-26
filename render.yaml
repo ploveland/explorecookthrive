@@ -27,18 +27,21 @@ services:
         value: "350"
       - key: AUTH_SECRET
         generateValue: true
+        sync: false
+      # Secrets stay on the service. Do not set empty values here — Blueprint
+      # sync would wipe keys pasted in the Render dashboard.
       - key: OPENAI_API_KEY
-        value: ""
+        sync: false
       - key: USDA_FDC_API_KEY
-        value: ""
+        sync: false
       - key: RESEND_API_KEY
-        value: ""
+        sync: false
       - key: EMAIL_FROM
-        value: ""
+        sync: false
       - key: AUTH_GOOGLE_ID
-        value: ""
+        sync: false
       - key: AUTH_GOOGLE_SECRET
-        value: ""
+        sync: false
     disk:
       name: ect-data
       mountPath: /opt/render/project/src/.data

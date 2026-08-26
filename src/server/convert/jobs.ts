@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { saveDraft, getDraft } from "../drafts/store";
+import { env } from "../env";
 import { log } from "../log";
 import { compareRecipeNutrition, type NutritionIngredientInput } from "../nutrition/estimate";
 import { inputFromExtractedRecipe } from "./from-recipe";
@@ -22,8 +23,8 @@ const DIR = path.join(process.cwd(), ".data", "jobs");
 const running = new Set<string>();
 
 function stageDelayMs() {
-  const raw = process.env.CONVERT_STAGE_DELAY_MS;
-  if (raw === undefined || raw === "") return 350;
+  const raw = env("CONVERT_STAGE_DELAY_MS");
+  if (!raw) return 350;
   const value = Number(raw);
   return Number.isFinite(value) ? Math.max(0, value) : 350;
 }
@@ -128,7 +129,7 @@ export async function createJob(input: {
     status: "queued",
     statusLabel: "Queued",
     provider: live ? "openai" : "mock",
-    model: live ? (process.env.OPENAI_MODEL ?? "gpt-4.1-mini") : "culinary-mock-v1",
+    model: live ? env("OPENAI_MODEL") || "gpt-4.1-mini" : "culinary-mock-v1",
     promptVersion: PROMPT_VERSION,
     output: null,
     nutrition: null,

@@ -81,9 +81,11 @@ export function ConvertProgress({ jobId }: { jobId: string }) {
       </ol>
 
       {job?.provider === "mock" ? (
-        <p className="rounded-2xl bg-sage/15 px-4 py-3 text-sm text-teal ring-1 ring-sage/40">
-          No OpenAI key is set, so this run uses the local culinary mock. Add{" "}
-          <code className="font-mono">OPENAI_API_KEY</code> to use the live model.
+        <p className="rounded-2xl bg-terracotta/15 px-4 py-3 text-sm text-teal ring-1 ring-terracotta/40">
+          This run is the local culinary mock, not OpenAI — that is why the rewrite step is
+          instant and OpenAI shows no new requests. Paste <code className="font-mono">OPENAI_API_KEY</code>{" "}
+          into Render Environment, then redeploy. Leave the key blank in render.yaml so the next
+          deploy does not wipe it.
         </p>
       ) : null}
 

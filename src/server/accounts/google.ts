@@ -1,3 +1,4 @@
+import { env } from "../env";
 import { log } from "../log";
 import { consumeGoogleLinkToken, issueGoogleLinkToken, readGoogleLinkToken } from "./google-link";
 import {
@@ -11,7 +12,7 @@ import {
 } from "./users";
 
 export function googleAuthConfigured() {
-  return Boolean(process.env.AUTH_GOOGLE_ID?.trim() && process.env.AUTH_GOOGLE_SECRET?.trim());
+  return Boolean(env("AUTH_GOOGLE_ID") && env("AUTH_GOOGLE_SECRET"));
 }
 
 export function googleAuthFailureCopy(reason?: string | null) {

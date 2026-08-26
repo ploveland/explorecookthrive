@@ -79,9 +79,9 @@ export function ConvertResult({
       <JumpToRecipe />
 
       {job.provider === "mock" ? (
-        <p className="rounded-2xl bg-sage/15 px-4 py-3 text-sm text-teal ring-1 ring-sage/40">
+        <p className="rounded-2xl bg-terracotta/15 px-4 py-3 text-sm text-teal ring-1 ring-terracotta/40">
           This Thrive Version was written by the local culinary mock because no OpenAI key is
-          set. Nutrition numbers below still come from USDA values, not from the mock.
+          set on this host. Nutrition numbers below still come from USDA values, not from the mock.
         </p>
       ) : (
         <p className="rounded-2xl bg-sage/15 px-4 py-3 text-sm text-teal ring-1 ring-sage/40">

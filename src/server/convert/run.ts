@@ -1,6 +1,7 @@
 import { createLlmClient, conversionOutputSchema } from "../ai";
 import type { ConversionOutput } from "../ai/types";
 import { log } from "../log";
+import { env } from "../env";
 import { mockConvert } from "./mock";
 import { CONVERSION_SYSTEM_PROMPT, buildConversionPrompt } from "./prompt";
 import { PROMPT_VERSION, type ConvertRecipeInput } from "./schema";
@@ -16,7 +17,7 @@ export type ConversionRun = {
 };
 
 export function hasLiveLlm() {
-  return Boolean(process.env.OPENAI_API_KEY?.trim());
+  return Boolean(env("OPENAI_API_KEY"));
 }
 
 export async function runConversion(input: ConvertRecipeInput): Promise<ConversionRun> {

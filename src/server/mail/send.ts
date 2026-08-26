@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { env } from "../env";
 import { log } from "../log";
 
 export type OutgoingMail = {
@@ -12,7 +13,7 @@ export type OutgoingMail = {
 const OUTBOX_DIR = path.join(process.cwd(), ".data", "mail-outbox");
 
 export function mailerConfigured() {
-  return Boolean(process.env.RESEND_API_KEY?.trim());
+  return Boolean(env("RESEND_API_KEY"));
 }
 
 export function allowResetPreview() {
@@ -20,10 +21,10 @@ export function allowResetPreview() {
 }
 
 export async function sendMail(message: OutgoingMail): Promise<"sent" | "outbox"> {
-  const apiKey = process.env.RESEND_API_KEY?.trim();
+  const apiKey = env("RESEND_API_KEY");
   if (apiKey) {
     const from =
-      process.env.EMAIL_FROM?.trim() || "Explore Cook Thrive <onboarding@resend.dev>";
+      env("EMAIL_FROM") || "Explore Cook Thrive <onboarding@resend.dev>";
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
