@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+
 export function JumpToRecipe({
   href = "#recipe",
   label = "Jump to recipe",
@@ -6,11 +8,11 @@ export function JumpToRecipe({
   label?: string;
 }) {
   return (
-    <a
-      href={href}
-      className="inline-flex w-fit text-sm font-medium text-teal underline-offset-4 hover:underline"
-    >
-      {label}
-    </a>
+    <div className="flex flex-wrap items-center gap-3">
+      <Button render={<a href={href} />} variant="outline" className="h-11 px-5">
+        {label}
+      </Button>
+      <p className="text-sm text-teal/75">Skip nutrition and what changed.</p>
+    </div>
   );
 }

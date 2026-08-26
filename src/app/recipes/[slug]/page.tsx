@@ -150,6 +150,8 @@ export default async function PublishedRecipePage({
         reviews={reviews}
       />
 
+      <JumpToRecipe />
+
       {recipe.nutrition ? <ConvertNutrition nutrition={recipe.nutrition} /> : null}
 
       <section className="space-y-3">

@@ -56,8 +56,7 @@ export function ConvertResult({
 
   return (
     <div className="space-y-10">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
           <Badge variant={publishedSlug ? "outline" : "secondary"}>
             {publishedSlug ? "Published" : "Private"}
           </Badge>
@@ -75,9 +74,9 @@ export function ConvertResult({
               {DIETARY_COPY[item].label}
             </Badge>
           ))}
-        </div>
-        <JumpToRecipe />
       </div>
+
+      <JumpToRecipe />
 
       {job.provider === "mock" ? (
         <p className="rounded-2xl bg-sage/15 px-4 py-3 text-sm text-teal ring-1 ring-sage/40">
