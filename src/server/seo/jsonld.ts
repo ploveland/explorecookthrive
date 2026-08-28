@@ -2,6 +2,7 @@ import type { RatingSummary } from "@/server/community/policy";
 import { DIETARY_COPY, type DietaryRequirementId } from "@/server/convert/schema";
 import { isRecipeFoodPhoto } from "@/server/library/image";
 import type { PublishedRecipe } from "@/server/library/schema";
+import { nutritionSideEstimated } from "@/server/nutrition/display";
 import { TAXONOMY_TAGS } from "@/server/taxonomy/tags";
 import { iso8601Minutes } from "./iso8601";
 import { siteUrl } from "./site";
@@ -99,8 +100,10 @@ function recipeKeywords(recipe: PublishedRecipe) {
 }
 
 function recipeNutritionJsonLd(recipe: PublishedRecipe) {
-  const perServing = recipe.nutrition?.thrive.perServing;
-  if (!perServing || !(recipe.servings > 0)) return undefined;
+  const thrive = recipe.nutrition?.thrive;
+  if (!thrive || !nutritionSideEstimated(thrive) || !(recipe.servings > 0)) return undefined;
+  const perServing = thrive.perServing;
+  if (!perServing) return undefined;
   return {
     "@type": "NutritionInformation",
     calories: `${Math.round(perServing.calories)} calories`,

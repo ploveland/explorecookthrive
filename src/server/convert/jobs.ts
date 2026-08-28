@@ -202,6 +202,13 @@ export async function processJob(id: string): Promise<ConversionJob | null> {
         thrive: toNutritionInputs(result.output.thriveVersion.ingredients),
         thriveServings: result.output.thriveVersion.servings,
       });
+      log.info("convert.nutrition_estimated", {
+        jobId: id,
+        originalMapped: nutrition.original.mappedCount,
+        originalUnmapped: nutrition.original.unmappedCount,
+        thriveMapped: nutrition.thrive.mappedCount,
+        thriveUnmapped: nutrition.thrive.unmappedCount,
+      });
     } catch (error) {
       log.error("convert.nutrition_failed", {
         jobId: id,

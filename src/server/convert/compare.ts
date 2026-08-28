@@ -1,3 +1,4 @@
+import { nutritionSideEstimated } from "../nutrition/display";
 import { subtractNutrients, type NutrientTotals } from "../nutrition/schema";
 import type { ConversionJob } from "./schema";
 import { sameKitchen } from "./versions";
@@ -22,7 +23,9 @@ export function pairThriveJobs(
 }
 
 export function thriveNutrients(job: ConversionJob): NutrientTotals | null {
-  return job.nutrition?.thrive.perServing ?? job.nutrition?.thrive.totals ?? null;
+  const thrive = job.nutrition?.thrive;
+  if (!thrive || !nutritionSideEstimated(thrive)) return null;
+  return thrive.perServing ?? thrive.totals;
 }
 
 export function compareThriveNutrition(left: ConversionJob, right: ConversionJob) {

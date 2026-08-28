@@ -115,6 +115,9 @@ export async function estimateRecipeNutrition(
       `${unmappedCount} ingredient${unmappedCount === 1 ? "" : "s"} could not be matched or converted, so the total is incomplete.`,
     );
   }
+  if (countable.length > 0 && mappedCount + assumedCount === 0) {
+    notes.push("None of these ingredient lines could be matched to USDA foods, so the numbers are missing — not zero.");
+  }
   if (!servings) {
     notes.push("Servings were missing, so per-serving numbers are not shown.");
   }
@@ -140,8 +143,10 @@ export async function compareRecipeNutrition(input: {
 }): Promise<NutritionComparison> {
   const original = await estimateRecipeNutrition(input.original, input.originalServings);
   const thrive = await estimateRecipeNutrition(input.thrive, input.thriveServings);
+  const originalEstimated = original.mappedCount + original.assumedCount > 0;
+  const thriveEstimated = thrive.mappedCount + thrive.assumedCount > 0;
   const deltaPerServing =
-    original.perServing && thrive.perServing
+    originalEstimated && thriveEstimated && original.perServing && thrive.perServing
       ? roundNutrients(subtractNutrients(thrive.perServing, original.perServing))
       : null;
 

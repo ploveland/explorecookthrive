@@ -86,4 +86,29 @@ describe("USDA recipe estimates", () => {
     expect(findCatalogFood("cream cheese")?.id).toBe("cream-cheese");
     expect(findCatalogFood("homemade chicken broth")?.id).toBe("broth");
   });
+
+  it("does not treat an unmatched original as a zero-calorie baseline", async () => {
+    const comparison = await compareRecipeNutrition({
+      original: [
+        {
+          rawText: "a pinch of mystery spice blend",
+          name: "mystery spice blend",
+          quantity: 1,
+          unit: "pinch",
+        },
+      ],
+      originalServings: 4,
+      thrive: [
+        { rawText: "1 cup all-purpose flour", name: "all-purpose flour", quantity: 1, unit: "cup" },
+        { rawText: "4 tablespoons unsalted butter", name: "unsalted butter", quantity: 4, unit: "tablespoon" },
+      ],
+      thriveServings: 4,
+    });
+
+    expect(comparison.original.mappedCount + comparison.original.assumedCount).toBe(0);
+    expect(comparison.original.totals.calories).toBe(0);
+    expect(comparison.thrive.totals.calories).toBeGreaterThan(400);
+    expect(comparison.deltaPerServing).toBeNull();
+    expect(comparison.original.notes.join(" ")).toMatch(/missing — not zero/i);
+  });
 });

@@ -118,6 +118,8 @@ describe("recipe SEO", () => {
       ...recipe,
       nutrition: {
         thrive: {
+          mappedCount: 4,
+          assumedCount: 0,
           perServing: {
             calories: 410,
             proteinG: 28,
@@ -159,6 +161,29 @@ describe("recipe SEO", () => {
       },
     } as unknown as PublishedRecipe;
     expect(recipeJsonLd(totalsOnly).nutrition).toBeUndefined();
+  });
+
+  it("does not publish unmatched USDA zeros as recipe nutrition", () => {
+    const unmatched = {
+      ...recipe,
+      nutrition: {
+        thrive: {
+          mappedCount: 0,
+          assumedCount: 0,
+          perServing: {
+            calories: 0,
+            proteinG: 0,
+            fiberG: 0,
+            fatG: 0,
+            saturatedFatG: 0,
+            carbsG: 0,
+            sugarG: 0,
+            sodiumMg: 0,
+          },
+        },
+      },
+    } as unknown as PublishedRecipe;
+    expect(recipeJsonLd(unmatched).nutrition).toBeUndefined();
   });
 
   it("adds aggregateRating from cook scores without inventing them", () => {

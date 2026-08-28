@@ -180,6 +180,28 @@ describe("compare Thrive Versions", () => {
     expect(compared.delta?.proteinG).toBe(4);
   });
 
+  it("skips version compare when a thrive side was never matched", () => {
+    const left = job({ id: "a", draftId: "chili", createdAt: "2026-08-25T10:00:00.000Z" });
+    const right = job({
+      id: "b",
+      draftId: "chili",
+      createdAt: "2026-08-25T12:00:00.000Z",
+      nutrition: {
+        ...left.nutrition!,
+        thrive: {
+          ...left.nutrition!.thrive,
+          mappedCount: 0,
+          assumedCount: 0,
+          perServing: emptyNutrients(),
+          totals: emptyNutrients(),
+        },
+      },
+    });
+    const compared = compareThriveNutrition(left, right);
+    expect(compared.right).toBeNull();
+    expect(compared.delta).toBeNull();
+  });
+
   it("orders compare URLs by version number", () => {
     expect(compareHref("b", "a", 2, 1)).toBe("/kitchen/compare?left=a&right=b");
   });

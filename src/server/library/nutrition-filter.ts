@@ -1,3 +1,4 @@
+import { nutritionSideEstimated } from "../nutrition/display";
 import type { PublishedRecipe } from "./schema";
 
 export type NutritionFilters = {
@@ -47,7 +48,9 @@ export function hasNutritionFilters(filters: NutritionFilters) {
 }
 
 export function thrivePerServing(recipe: Pick<PublishedRecipe, "nutrition">) {
-  return recipe.nutrition?.thrive.perServing ?? recipe.nutrition?.thrive.totals ?? null;
+  const thrive = recipe.nutrition?.thrive;
+  if (!thrive || !nutritionSideEstimated(thrive)) return null;
+  return thrive.perServing ?? thrive.totals;
 }
 
 export function matchesNutritionFilters(

@@ -63,6 +63,21 @@ describe("nutrition filters", () => {
     ).toBe(false);
   });
 
+  it("does not treat an unmatched thrive estimate as under the calorie bound", () => {
+    const unmatched = recipe({ calories: 0, proteinG: 0, fiberG: 0, sodiumMg: 0 });
+    unmatched.nutrition.thrive.mappedCount = 0;
+    unmatched.nutrition.thrive.assumedCount = 0;
+    unmatched.nutrition.thrive.unmappedCount = 6;
+    expect(
+      matchesNutritionFilters(unmatched, {
+        maxCalories: 500,
+        minProtein: null,
+        minFiber: null,
+        maxSodium: null,
+      }),
+    ).toBe(false);
+  });
+
   it("rejects a calorie count above the bound", () => {
     expect(
       matchesNutritionFilters(recipe({ calories: 900, proteinG: 40, fiberG: 10, sodiumMg: 400 }), {

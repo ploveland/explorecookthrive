@@ -22,6 +22,13 @@ export function formatNutrientValue(key: keyof NutrientTotals, value: number) {
   return Number.isInteger(rounded) ? `${rounded}` : rounded.toFixed(1);
 }
 
+export function nutritionSideEstimated(side: {
+  mappedCount: number;
+  assumedCount: number;
+}) {
+  return side.mappedCount + side.assumedCount > 0;
+}
+
 export function formatNutrientDelta(key: keyof NutrientTotals, value: number) {
   const abs = formatNutrientValue(key, Math.abs(value));
   if (Math.abs(value) < 0.05) return "0";

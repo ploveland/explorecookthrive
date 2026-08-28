@@ -6,18 +6,40 @@ import {
   formatNutrientValue,
   nutrientDeltaClass,
   nutrientDeltaTone,
+  nutritionSideEstimated,
 } from "@/server/nutrition/display";
 
 export function ConvertNutrition({ nutrition }: { nutrition: NutritionComparison }) {
+  const originalEstimated = nutritionSideEstimated(nutrition.original);
+  const thriveEstimated = nutritionSideEstimated(nutrition.thrive);
   const original = nutrition.original.perServing ?? nutrition.original.totals;
   const thrive = nutrition.thrive.perServing ?? nutrition.thrive.totals;
-  const delta = nutrition.deltaPerServing;
-  const perServing = Boolean(nutrition.original.perServing && nutrition.thrive.perServing);
-  const weaker = [nutrition.original.confidence, nutrition.thrive.confidence].includes("low")
+  const delta = originalEstimated && thriveEstimated ? nutrition.deltaPerServing : null;
+  const perServing = Boolean(
+    originalEstimated &&
+      thriveEstimated &&
+      nutrition.original.perServing &&
+      nutrition.thrive.perServing,
+  );
+  const weakerSides = [
+    originalEstimated ? nutrition.original.confidence : null,
+    thriveEstimated ? nutrition.thrive.confidence : null,
+  ].filter((value): value is NonNullable<typeof value> => value != null);
+  const weaker = weakerSides.includes("low")
     ? "low"
-    : [nutrition.original.confidence, nutrition.thrive.confidence].includes("medium")
+    : weakerSides.includes("medium")
       ? "medium"
-      : "high";
+      : weakerSides.length > 0
+        ? "high"
+        : "low";
+  const missingCopy =
+    originalEstimated && thriveEstimated
+      ? null
+      : !originalEstimated && thriveEstimated
+        ? "The original ingredient lines could not be matched to USDA foods, so Original and Change are blank — not zero. The Thrive Version numbers are still an estimate. Open Ingredient matching to see which original lines were unmapped."
+        : originalEstimated && !thriveEstimated
+          ? "The Thrive Version ingredient lines could not be matched to USDA foods, so Thrive and Change are blank — not zero. Open Ingredient matching to see which lines were unmapped."
+          : "Neither side could be matched to USDA foods, so the numbers are missing — not zero. Open Ingredient matching to see which lines were unmapped.";
 
   return (
     <section className="space-y-4 rounded-3xl bg-white/80 p-5 ring-1 ring-teal/10 sm:p-6">
@@ -32,6 +54,12 @@ export function ConvertNutrition({ nutrition }: { nutrition: NutritionComparison
           Confidence: {weaker}
         </p>
       </div>
+
+      {missingCopy ? (
+        <p className="rounded-2xl bg-sage/15 px-4 py-3 text-sm text-teal ring-1 ring-sage/40">
+          {missingCopy}
+        </p>
+      ) : null}
 
       <p className="text-sm text-teal/75">
         {confidenceCopy(weaker)}. Numbers come from {nutrition.sourceLabel}, not from the language
@@ -50,32 +78,50 @@ export function ConvertNutrition({ nutrition }: { nutrition: NutritionComparison
           </thead>
           <tbody>
             {NUTRIENT_ROWS.map((row) => {
-              const change = delta?.[row.key] ?? thrive[row.key] - original[row.key];
+              const change = delta?.[row.key];
               return (
                 <tr key={row.key} className="border-b border-teal/5">
                   <td className="py-2.5 pr-3 text-teal">{row.label}</td>
                   <td className="py-2.5 pr-3 tabular-nums text-teal/80">
-                    {formatNutrientValue(row.key, original[row.key])}
-                    {row.suffix}
+                    {originalEstimated ? (
+                      <>
+                        {formatNutrientValue(row.key, original[row.key])}
+                        {row.suffix}
+                      </>
+                    ) : (
+                      "—"
+                    )}
                   </td>
                   <td className="py-2.5 pr-3 tabular-nums font-medium text-teal">
-                    {formatNutrientValue(row.key, thrive[row.key])}
-                    {row.suffix}
+                    {thriveEstimated ? (
+                      <>
+                        {formatNutrientValue(row.key, thrive[row.key])}
+                        {row.suffix}
+                      </>
+                    ) : (
+                      "—"
+                    )}
                   </td>
-                  <td className={`py-2.5 tabular-nums font-medium ${nutrientDeltaClass(change, row.invert)}`}>
-                    <span className="sr-only">
-                      {row.label} {formatNutrientDelta(row.key, change)}
-                      {row.suffix}, {nutrientDeltaTone(change, row.invert)}
-                    </span>
-                    <span aria-hidden>
-                      {formatNutrientDelta(row.key, change)}
-                      {row.suffix}
-                      {Math.abs(change) >= 0.05 ? (
-                        <span className="ml-1 text-xs font-normal">
-                          {nutrientDeltaTone(change, row.invert) === "improved" ? "better" : "not better"}
+                  <td className={`py-2.5 tabular-nums font-medium ${change == null ? "text-teal/70" : nutrientDeltaClass(change, row.invert)}`}>
+                    {change == null ? (
+                      "—"
+                    ) : (
+                      <>
+                        <span className="sr-only">
+                          {row.label} {formatNutrientDelta(row.key, change)}
+                          {row.suffix}, {nutrientDeltaTone(change, row.invert)}
                         </span>
-                      ) : null}
-                    </span>
+                        <span aria-hidden>
+                          {formatNutrientDelta(row.key, change)}
+                          {row.suffix}
+                          {Math.abs(change) >= 0.05 ? (
+                            <span className="ml-1 text-xs font-normal">
+                              {nutrientDeltaTone(change, row.invert) === "improved" ? "better" : "not better"}
+                            </span>
+                          ) : null}
+                        </span>
+                      </>
+                    )}
                   </td>
                 </tr>
               );

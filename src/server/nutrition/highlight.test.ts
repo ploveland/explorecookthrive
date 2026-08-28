@@ -48,4 +48,19 @@ describe("nutrition card highlight", () => {
     expect(highlight?.calories).toBe("500 → 510 cal");
     expect(highlight?.improvement).toBeNull();
   });
+
+  it("does not treat an unmatched original as 0 calories", () => {
+    const highlight = nutritionCardHighlight({
+      ...comparison({ calories: 0, proteinG: 0, fiberG: 0 }, { calories: 410, proteinG: 28, fiberG: 9 }),
+      original: {
+        ...comparison({ calories: 0 }, { calories: 410 }).original,
+        mappedCount: 0,
+        unmappedCount: 4,
+        assumedCount: 0,
+        confidence: "low",
+      },
+    });
+    expect(highlight?.calories).toBe("410 cal");
+    expect(highlight?.improvement).toBeNull();
+  });
 });
