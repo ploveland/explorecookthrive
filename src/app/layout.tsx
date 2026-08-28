@@ -41,6 +41,13 @@ export const metadata: Metadata = {
       },
     ],
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Explore Cook Thrive",
+    description:
+      "Keep the flavor. Improve the recipe. Explore Cook Thrive finds nutrition upgrades that respect the dish you already love.",
+    images: ["/brand/logo.png"],
+  },
 };
 
 export default function RootLayout({

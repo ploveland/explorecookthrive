@@ -20,6 +20,8 @@ import { currentAccount } from "@/server/accounts/session";
 import { getRatingSummary, getUserRating, listPublicReviews } from "@/server/community/store";
 import { recipeIsShareable, recipeShareUrl } from "@/server/library/share";
 import { getVisibleBySlug } from "@/server/library/store";
+import { JsonLd } from "@/components/json-ld";
+import { recipeSocialImages } from "@/server/library/image";
 import { recipeJsonLd, shouldIndexRecipe } from "@/server/seo/jsonld";
 import { siteUrl } from "@/server/seo/site";
 import { TAXONOMY_TAGS } from "@/server/taxonomy/tags";
@@ -38,6 +40,7 @@ export async function generateMetadata({
   }
   const index = shouldIndexRecipe(recipe);
   const url = `${siteUrl()}/recipes/${recipe.slug}`;
+  const socialImages = recipeSocialImages(recipe.image);
   return {
     title: recipe.title,
     description: recipe.description,
@@ -48,6 +51,14 @@ export async function generateMetadata({
       description: recipe.description,
       url,
       type: "article",
+      siteName: "Explore Cook Thrive",
+      images: socialImages,
+    },
+    twitter: {
+      card: socialImages ? "summary_large_image" : "summary",
+      title: recipe.title,
+      description: recipe.description,
+      images: socialImages?.map((image) => image.url),
     },
   };
 }
@@ -71,12 +82,9 @@ export default async function PublishedRecipePage({
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-12 sm:px-6">
       {recipe.visibility === "public" ? (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(recipeJsonLd(recipe, community)) }}
-        />
+        <JsonLd data={recipeJsonLd(recipe, community)} />
       ) : null}
-      <RecipeCover seed={coverInputFromPublished(recipe)} size="hero">
+      <RecipeCover seed={coverInputFromPublished(recipe)} size="hero" photo={recipe.image}>
         <p className="text-sm font-semibold tracking-[0.18em] text-cream/85 uppercase">
           Thrive Version
         </p>

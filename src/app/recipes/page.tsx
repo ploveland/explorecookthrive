@@ -1,6 +1,8 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { RecipeCard } from "@/components/recipe-card";
 import { Button } from "@/components/ui/button";
+import { JsonLd } from "@/components/json-ld";
 import { NutritionFiltersForm } from "@/components/nutrition-filters";
 import { getRatingSummaries } from "@/server/community/store";
 import {
@@ -9,9 +11,53 @@ import {
   parseNutritionFilters,
 } from "@/server/library/nutrition-filter";
 import { listPublished } from "@/server/library/store";
+import { libraryItemListJsonLd } from "@/server/seo/jsonld";
+import { siteUrl } from "@/server/seo/site";
 import { TAXONOMY_TAGS } from "@/server/taxonomy/tags";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    tag?: string;
+    tested?: string;
+    maxCal?: string;
+    minProtein?: string;
+    minFiber?: string;
+    maxSodium?: string;
+  }>;
+}): Promise<Metadata> {
+  const params = await searchParams;
+  const selected = params.tag?.trim().toLowerCase() || null;
+  const onlyTested = params.tested === "1";
+  const nutrition = parseNutritionFilters(params);
+  const selectedName = TAXONOMY_TAGS.find((item) => item.slug === selected)?.name;
+  const title = onlyTested
+    ? "Community Tested recipes"
+    : selectedName
+      ? `${selectedName} recipes`
+      : "Recipes";
+  const description = onlyTested
+    ? "Public Thrive Versions other kitchens cooked and rated for taste and texture."
+    : selectedName
+      ? `Public Thrive Versions tagged ${selectedName.toLowerCase()}.`
+      : "Public Thrive Versions: short, attributed rewrites with USDA estimates — not reprints of the original recipe.";
+  const canonicalPath = libraryHref({
+    tag: selected,
+    tested: onlyTested,
+    nutrition: hasNutritionFilters(nutrition) ? nutrition : undefined,
+  });
+  const url = `${siteUrl()}${canonicalPath}`;
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: { title, description, url },
+    twitter: { card: "summary", title, description },
+  };
+}
 
 const FILTERS = [
   { type: "MEAL", label: "Meal" },
@@ -48,6 +94,20 @@ export default async function RecipesPage({
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-12 sm:px-6">
+      <JsonLd
+        data={libraryItemListJsonLd(shown, {
+          name: onlyTested
+            ? "Community Tested Thrive Versions"
+            : selectedName
+              ? `${selectedName} Thrive Versions`
+              : "Explore Cook Thrive public recipe library",
+          url: `${siteUrl()}${libraryHref({
+            tag: selected,
+            tested: onlyTested,
+            nutrition: hasNutritionFilters(nutrition) ? nutrition : undefined,
+          })}`,
+        })}
+      />
       <header className="max-w-2xl">
         <p className="text-sm font-semibold tracking-[0.18em] text-terracotta uppercase">Library</p>
         <h1 className="font-heading mt-2 text-4xl text-teal">Recipes</h1>

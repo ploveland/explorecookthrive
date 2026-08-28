@@ -1,13 +1,39 @@
+import type { Metadata } from "next";
 import { RecipeCard } from "@/components/recipe-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { JsonLd } from "@/components/json-ld";
 import { NutritionFiltersForm } from "@/components/nutrition-filters";
 import { getRatingSummaries } from "@/server/community/store";
 import { parseNutritionFilters } from "@/server/library/nutrition-filter";
 import { listPublished } from "@/server/library/store";
 import { log } from "@/server/log";
+import { libraryItemListJsonLd } from "@/server/seo/jsonld";
+import { siteUrl } from "@/server/seo/site";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}): Promise<Metadata> {
+  const query = (await searchParams).q?.trim() ?? "";
+  const title = query ? `Search: ${query}` : "Search";
+  const description =
+    "Search public Thrive Versions by title, ingredient, cuisine, and tag. Nutrition bounds use USDA estimates.";
+  const url = query
+    ? `${siteUrl()}/search?q=${encodeURIComponent(query)}`
+    : `${siteUrl()}/search`;
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    robots: query ? { index: false, follow: true } : { index: true, follow: true },
+    openGraph: { title, description, url },
+    twitter: { card: "summary", title, description },
+  };
+}
 
 export default async function SearchPage({
   searchParams,
@@ -34,6 +60,16 @@ export default async function SearchPage({
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-16 sm:px-6">
+      <JsonLd
+        data={
+          query
+            ? libraryItemListJsonLd(recipes, {
+                name: `Search results for ${query}`,
+                url: `${siteUrl()}/search?q=${encodeURIComponent(query)}`,
+              })
+            : null
+        }
+      />
       <header>
         <p className="text-sm font-semibold tracking-[0.18em] text-terracotta uppercase">Search</p>
         <h1 className="font-heading mt-2 text-4xl text-teal">Find a Thrive Version</h1>

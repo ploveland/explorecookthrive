@@ -11,6 +11,25 @@ const thriveIngredientSchema = conversionOutputSchema.shape.thriveVersion.shape.
 const changeSchema = conversionOutputSchema.shape.changes.element;
 const keepSchema = conversionOutputSchema.shape.analysis.shape.wouldNotChange.element;
 
+export const recipeImageSources = [
+  "ect_original",
+  "user_upload",
+  "licensed",
+  "generated",
+] as const;
+export type RecipeImageSource = (typeof recipeImageSources)[number];
+
+/** Optional photo of the completed Thrive Version. Never a hotlinked source-site image. */
+export const recipeImageSchema = z.object({
+  url: z.string().url(),
+  alt: z.string().min(1),
+  width: z.number().int().positive().nullable().default(null),
+  height: z.number().int().positive().nullable().default(null),
+  source: z.enum(recipeImageSources),
+  credit: z.string().nullable().default(null),
+});
+export type RecipeImage = z.infer<typeof recipeImageSchema>;
+
 export const publishedRecipeSchema = z.object({
   id: z.string(),
   slug: z.string(),
@@ -41,6 +60,7 @@ export const publishedRecipeSchema = z.object({
   ownerName: z.string().nullable().default(null),
   visibility: z.enum(["public", "unlisted", "private"]).default("public"),
   publishedAt: z.string(),
+  image: recipeImageSchema.nullable().default(null),
 });
 
 export type PublishedRecipe = z.infer<typeof publishedRecipeSchema>;

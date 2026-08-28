@@ -6,15 +6,18 @@ export function RecipeCover({
   seed,
   size,
   className,
+  photo,
   children,
 }: {
   seed: CoverInput;
   size: "thumb" | "card" | "banner" | "hero";
   className?: string;
+  photo?: { url: string; alt: string } | null;
   children?: ReactNode;
 }) {
   const cover = planRecipeCover(seed);
-  const decorative = !children;
+  const foodPhoto = photo?.url ? photo : null;
+  const decorative = !children && !foodPhoto;
 
   return (
     <div
@@ -29,13 +32,21 @@ export function RecipeCover({
       )}
       style={{ backgroundImage: cover.backgroundImage }}
     >
-      <div
-        className="pointer-events-none absolute inset-0 opacity-35 mix-blend-soft-light"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(-18deg, rgb(255 255 255 / 0.16) 0 1px, transparent 1px 13px)",
-        }}
-      />
+      {foodPhoto ? (
+        <img
+          src={foodPhoto.url}
+          alt={foodPhoto.alt}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      ) : (
+        <div
+          className="pointer-events-none absolute inset-0 opacity-35 mix-blend-soft-light"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(-18deg, rgb(255 255 255 / 0.16) 0 1px, transparent 1px 13px)",
+          }}
+        />
+      )}
       {children ? (
         <div
           className={cn(

@@ -31,7 +31,11 @@ export function RecipeCard({
     >
       <div className="overflow-hidden">
         <div className="origin-center transition duration-300 group-hover:scale-[1.03]">
-          <RecipeCover seed={coverInputFromPublished(recipe)} size="card" />
+          <RecipeCover
+            seed={coverInputFromPublished(recipe)}
+            size="card"
+            photo={recipe.image}
+          />
         </div>
       </div>
       <div className="flex flex-1 flex-col p-5">
@@ -40,9 +44,9 @@ export function RecipeCard({
             <CommunityBadge summary={community} />
           </div>
         ) : null}
-        <h3 className="font-heading text-xl text-teal group-hover:text-terracotta-strong">
+        <h2 className="font-heading text-xl text-teal group-hover:text-terracotta-strong">
           {recipe.title}
-        </h3>
+        </h2>
         <p className="mt-1 text-xs text-teal/60">Based on {recipe.originalTitle}</p>
         <p className="mt-2 line-clamp-3 text-sm leading-6 text-teal/80">{recipe.description}</p>
         {highlight ? (

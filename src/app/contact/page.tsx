@@ -5,6 +5,7 @@ import { CONTACT_EMAIL, CONTACT_MAILTO } from "@/lib/contact";
 export const metadata: Metadata = {
   title: "Contact",
   description: "Email Explore Cook Thrive at hello@explorecookthrive.com.",
+  alternates: { canonical: "/contact" },
 };
 
 export default function ContactPage() {

@@ -4,7 +4,7 @@ import path from "node:path";
 import { saveDraft } from "../drafts/store";
 import { createJob, processJob } from "../convert/jobs";
 import { assignLibraryTags } from "./tags";
-import { getPublishedByJobId, listPublished, publishFromJob, LibraryError } from "./store";
+import { getPublishedByJobId, listPublished, publishFromJob, setRecipeVisibility, LibraryError } from "./store";
 
 const sampleRecipe = {
   title: "Weeknight chili",
@@ -133,9 +133,27 @@ describe("library publish", () => {
     const fiber = await listPublished({ tag: "more-fiber" });
     expect(fiber.map((item) => item.id)).toContain(published.id);
 
+    expect(published.image).toBeNull();
     expect(published).not.toHaveProperty("originalIngredients");
     expect(published).not.toHaveProperty("originalInstructions");
     expect(published.instructions).toEqual(done!.output!.thriveVersion.instructions);
+  });
+
+  it("keeps unlisted recipes off the public library list", async () => {
+    process.env.CONVERT_STAGE_DELAY_MS = "0";
+    delete process.env.OPENAI_API_KEY;
+    const draft = await saveDraft(sampleRecipe);
+    const job = await createJob({
+      draftId: draft.id,
+      goals: ["healthier_overall"],
+      preference: "balanced",
+      dietary: [],
+    });
+    const done = await processJob(job.id);
+    const published = await publishFromJob(done!, { ownerId: "cook-1", ownerName: "Sam" });
+    await setRecipeVisibility(published.slug, "cook-1", "unlisted");
+    const listed = await listPublished();
+    expect(listed.map((item) => item.slug)).not.toContain(published.slug);
   });
 
   it("refuses an unfinished job", async () => {

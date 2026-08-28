@@ -86,6 +86,7 @@ export function ScaledRecipe({
           : null}
       </p>
 
+      <h2 className="mt-6 font-heading text-xl text-teal">Ingredients</h2>
       <ul className="mt-4 space-y-2 text-sm text-teal">
         {scaled.map((entry) => (
           <li key={entry.item.rawText}>
@@ -96,6 +97,7 @@ export function ScaledRecipe({
           </li>
         ))}
       </ul>
+      <h2 className="mt-6 font-heading text-xl text-teal">Instructions</h2>
       <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm text-teal/80">
         {instructions.map((step) => (
           <li key={step}>{step}</li>

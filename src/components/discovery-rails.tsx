@@ -134,6 +134,7 @@ export async function DiscoveryRails() {
                         <RecipeCover
                           seed={coverInputFromPublished(recipe)}
                           size="thumb"
+                          photo={recipe.image}
                         />
                         <span className="min-w-0 flex-1">
                           <span className="block font-medium text-teal underline-offset-4 hover:underline">
