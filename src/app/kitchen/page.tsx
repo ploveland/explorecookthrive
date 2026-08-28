@@ -25,7 +25,7 @@ export default async function KitchenPage() {
           <Link className="font-medium underline-offset-4 hover:underline" href="/signin?next=/kitchen">
             Sign in
           </Link>{" "}
-          to keep them, favorite recipes, and publish.
+          to keep them, favorite recipes, and save Thrive Versions to the library.
         </p>
       ) : null}
 

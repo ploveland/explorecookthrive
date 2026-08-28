@@ -20,7 +20,7 @@ export async function KitchenNav() {
         <p className="mt-3 max-w-2xl text-lg leading-8 text-teal/80">
           {account.user
             ? "Conversions, favorites, and collections stay with this account. Thrive Versions of the same original stay together."
-            : "Guest conversions land here for a while. Sign in to keep them, favorite recipes, and publish."}
+            : "Guest conversions land here for a while. Sign in to keep them, favorite recipes, and save Thrive Versions to the library."}
         </p>
       </div>
       <nav aria-label="Kitchen" className="flex flex-wrap gap-2">

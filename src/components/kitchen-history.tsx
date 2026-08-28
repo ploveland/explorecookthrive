@@ -66,9 +66,17 @@ export function KitchenHistory({
                             Check progress
                           </Button>
                         )}
-                        {slug ? (
+                        {job.status === "complete" && slug ? (
                           <Button render={<Link href={`/recipes/${slug}`} />} variant="outline">
-                            Public page
+                            View in the library
+                          </Button>
+                        ) : null}
+                        {job.status === "complete" && !slug ? (
+                          <Button
+                            render={<Link href={`/convert/result/${job.id}#save-to-library`} />}
+                            className="bg-terracotta-strong text-cream"
+                          >
+                            Save to the library
                           </Button>
                         ) : null}
                       </div>

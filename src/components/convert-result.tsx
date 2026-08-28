@@ -76,6 +76,13 @@ export function ConvertResult({
           ))}
       </div>
 
+      <PublishThriveForm
+        jobId={job.id}
+        publishedSlug={publishedSlug ?? null}
+        signedIn={signedIn}
+        variant="hero"
+      />
+
       <JumpToRecipe />
 
       {job.provider === "mock" ? (
@@ -147,6 +154,13 @@ export function ConvertResult({
         </div>
       </section>
 
+      <PublishThriveForm
+        jobId={job.id}
+        publishedSlug={publishedSlug ?? null}
+        signedIn={signedIn}
+        variant="followup"
+      />
+
       {output.analysis.assumptions.length > 0 ? (
         <section className="space-y-2">
           <h2 className="font-heading text-2xl text-teal">Assumptions</h2>
@@ -158,11 +172,6 @@ export function ConvertResult({
         </section>
       ) : null}
 
-      <PublishThriveForm
-        jobId={job.id}
-        publishedSlug={publishedSlug ?? null}
-        signedIn={signedIn}
-      />
       {shareUrl && publishedSlug ? (
         <RecipeShare title={output.thriveVersion.title} url={shareUrl} />
       ) : null}
@@ -213,7 +222,7 @@ export function ConvertResult({
         <Button render={<Link href="/kitchen" />} variant="outline">
           All versions in your kitchen
         </Button>
-        <Button render={<Link href="/#thrive" />} className="bg-terracotta-strong text-cream">
+        <Button render={<Link href="/#thrive" />} variant="outline">
           Thrive another recipe
         </Button>
       </div>
