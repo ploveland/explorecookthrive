@@ -1,29 +1,17 @@
 import { createHash, randomUUID } from "node:crypto";
 import { access, mkdir, readdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
+import {
+  InvalidStorageIdError,
+  parsePublicSlug,
+  parseStorageId,
+  type StorageIdKind,
+} from "./parse-id";
 
-export type StorageIdKind = "uuid" | "hex64" | "numeric";
+export { InvalidStorageIdError, parsePublicSlug, parseStorageId, type StorageIdKind };
 
-export class InvalidStorageIdError extends Error {
-  readonly code = "invalid_id" as const;
-
-  constructor() {
-    super("That identifier is not valid.");
-    this.name = "InvalidStorageIdError";
-  }
-}
-
-const PATTERNS: Record<StorageIdKind, RegExp> = {
-  uuid: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-  hex64: /^[0-9a-f]{64}$/i,
-  numeric: /^[0-9]{10,16}$/,
-};
-
-const PUBLIC_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const DATA_SEGMENT = /^[a-z][a-z0-9-]*$/;
 const EVAL_BASENAME = /^[a-z0-9][a-z0-9._-]*\.json$/i;
-
-const ENCODED_TRAVERSAL = /%(?:2e|2f|5c|00)/i;
 
 export function newStorageId() {
   return randomUUID();
@@ -31,35 +19,6 @@ export function newStorageId() {
 
 export function sha256Hex(value: string) {
   return createHash("sha256").update(value).digest("hex");
-}
-
-function rejectUnsafeRaw(raw: string) {
-  if (raw !== raw.trim() || raw.length === 0 || raw.length > 200) {
-    throw new InvalidStorageIdError();
-  }
-  if (raw.includes("\0") || raw.includes("/") || raw.includes("\\") || raw.includes("..")) {
-    throw new InvalidStorageIdError();
-  }
-  if (ENCODED_TRAVERSAL.test(raw) || raw.includes("%")) {
-    throw new InvalidStorageIdError();
-  }
-  if (path.isAbsolute(raw) || /^[a-zA-Z]:/.test(raw)) {
-    throw new InvalidStorageIdError();
-  }
-}
-
-export function parseStorageId(raw: unknown, kind: StorageIdKind = "uuid"): string {
-  if (typeof raw !== "string") throw new InvalidStorageIdError();
-  rejectUnsafeRaw(raw);
-  if (!PATTERNS[kind].test(raw)) throw new InvalidStorageIdError();
-  return raw.toLowerCase();
-}
-
-export function parsePublicSlug(raw: unknown): string {
-  if (typeof raw !== "string") throw new InvalidStorageIdError();
-  rejectUnsafeRaw(raw);
-  if (raw.length > 80 || !PUBLIC_SLUG.test(raw)) throw new InvalidStorageIdError();
-  return raw;
 }
 
 export function dataDir(...segments: string[]) {

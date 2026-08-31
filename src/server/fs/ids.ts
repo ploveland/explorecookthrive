@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { parsePublicSlug, parseStorageId } from "./safe-path";
+import { parsePublicSlug, parseStorageId } from "./parse-id";
 
 export const storageUuidSchema = z.string().refine(
   (value) => {
