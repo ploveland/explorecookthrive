@@ -33,12 +33,10 @@ export async function POST(request: Request) {
       );
     }
     const existing = await getPublishedByJobId(job.id);
-    const recipe =
-      existing ??
-      (await publishFromJob(job, {
-        ownerId: account.user.id,
-        ownerName: account.user.name,
-      }));
+    const recipe = await publishFromJob(job, {
+      ownerId: account.user.id,
+      ownerName: account.user.name,
+    });
     revalidatePath("/");
     revalidatePath("/recipes");
     revalidatePath("/search");
@@ -62,7 +60,8 @@ export async function POST(request: Request) {
       );
     }
     if (error instanceof LibraryError) {
-      return NextResponse.json({ code: error.code, message: error.message }, { status: 409 });
+      const status = error.code === "not_owner" ? 403 : 409;
+      return NextResponse.json({ code: error.code, message: error.message }, { status });
     }
     return (
       jsonErrorFromUnknown(error) ??

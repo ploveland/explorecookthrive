@@ -4,7 +4,7 @@ import { KitchenNav } from "@/components/kitchen-nav";
 import { RecipeCard } from "@/components/recipe-card";
 import { getCollectionForUser } from "@/server/accounts/collections";
 import { currentAccount } from "@/server/accounts/session";
-import { getPublishedBySlug } from "@/server/library/store";
+import { getVisibleBySlug } from "@/server/library/store";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +20,7 @@ export default async function CollectionDetailPage({
   if (!collection) notFound();
 
   const recipes = (
-    await Promise.all(collection.recipeSlugs.map((recipeSlug) => getPublishedBySlug(recipeSlug)))
+    await Promise.all(collection.recipeSlugs.map((recipeSlug) => getVisibleBySlug(recipeSlug, account.userId)))
   ).filter((recipe) => recipe !== null);
 
   return (

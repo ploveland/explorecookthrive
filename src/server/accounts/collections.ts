@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { getVisibleBySlug } from "../library/store";
 import { dataDir, newStorageId, parsePublicSlug, parseStorageId, readConfinedJson, readConfinedJsonRecords, writeConfinedJson } from "../fs/safe-path";
 
 const DIR = dataDir("collections");
@@ -101,6 +102,10 @@ export async function addToCollection(
     throw new CollectionError("not_found", "We could not find that collection.");
   }
   const slug = parsePublicSlug(recipeSlug);
+  const recipe = await getVisibleBySlug(slug, userId);
+  if (!recipe) {
+    throw new CollectionError("not_found", "We could not find that recipe.");
+  }
   if (!collection.recipeSlugs.includes(slug)) {
     collection.recipeSlugs = [slug, ...collection.recipeSlugs];
     await writeConfinedJson(DIR, collection.id, JSON.stringify(collection, null, 2));

@@ -1,7 +1,18 @@
 import { z } from "zod";
+import { getVisibleBySlug } from "../library/store";
 import { dataDir, parsePublicSlug, readConfinedJson, writeConfinedJson } from "../fs/safe-path";
 
 const DIR = dataDir("favorites");
+
+export class FavoriteError extends Error {
+  constructor(
+    public readonly code: "not_found",
+    message: string,
+  ) {
+    super(message);
+    this.name = "FavoriteError";
+  }
+}
 
 const favoriteListSchema = z.object({
   userId: z.string(),
@@ -44,6 +55,10 @@ export async function toggleFavorite(userId: string, slug: string): Promise<{ fa
       slugs.filter((item) => item !== safeSlug),
     );
     return { favorited: false };
+  }
+  const recipe = await getVisibleBySlug(safeSlug, userId);
+  if (!recipe) {
+    throw new FavoriteError("not_found", "We could not find that recipe.");
   }
   await writeList(userId, [safeSlug, ...slugs]);
   return { favorited: true };

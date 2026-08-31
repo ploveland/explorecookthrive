@@ -2,7 +2,17 @@ import { afterEach, describe, expect, it } from "vitest";
 import { rm } from "node:fs/promises";
 import path from "node:path";
 import { saveDraft } from "../drafts/store";
-import { createJob, ensureDraftFromJob, getJob, listRelatedJobs, processJob, JobError } from "./jobs";
+import {
+  assignJobOwner,
+  createJob,
+  ensureDraftFromJob,
+  getAccessibleJob,
+  getJob,
+  listJobsForAccount,
+  listRelatedJobs,
+  processJob,
+  JobError,
+} from "./jobs";
 import { newStorageId } from "../fs/safe-path";
 
 const GUEST = "11111111-1111-4111-8111-111111111111";
@@ -76,7 +86,9 @@ describe("conversion jobs", () => {
   });
 
   it("refuses to restore a conversion that is not there", async () => {
-    await expect(ensureDraftFromJob(newStorageId())).rejects.toMatchObject({ code: "job_not_found" });
+    await expect(ensureDraftFromJob(newStorageId(), { guestId: GUEST })).rejects.toMatchObject({
+      code: "job_not_found",
+    });
   });
 
   it("runs a mock conversion through to a private result", async () => {
@@ -122,7 +134,7 @@ describe("conversion jobs", () => {
     await processJob(first.id);
     await rm(path.join(process.cwd(), ".data", "drafts", `${draft.id}.json`), { force: true });
 
-    const restored = await ensureDraftFromJob(first.id);
+    const restored = await ensureDraftFromJob(first.id, { guestId: GUEST });
     expect(restored.draft.id).toBe(first.draftId);
     expect(restored.draft.recipe.title).toBe("Weeknight chili");
     expect(restored.job.goals).toEqual(["higher_protein", "more_fiber"]);
@@ -147,5 +159,48 @@ describe("conversion jobs", () => {
     expect(related.map((item) => item.id).sort()).toEqual([first.id, second.id].sort());
     expect(versionNumberFor(related, first.id)).toBe(1);
     expect(versionNumberFor(related, second.id)).toBe(2);
+  });
+
+  it("does not restore or list another kitchen's conversion", async () => {
+    const owner = "11111111-1111-4111-8111-111111111111";
+    const other = "22222222-2222-4222-8222-222222222222";
+    const draft = await saveDraft(sampleRecipe, { guestId: owner });
+    const job = await createJob({
+      draftId: draft.id,
+      goals: ["healthier_overall"],
+      preference: "balanced",
+      dietary: [],
+      guestId: owner,
+    });
+
+    await expect(ensureDraftFromJob(job.id, { guestId: other })).rejects.toMatchObject({
+      code: "job_not_found",
+    });
+    expect(await getAccessibleJob(job.id, { guestId: other })).toBeNull();
+    expect(await getAccessibleJob(job.id, { guestId: owner })).not.toBeNull();
+
+    const listed = await listJobsForAccount({ guestId: other });
+    expect(listed.map((item) => item.id)).not.toContain(job.id);
+  });
+
+  it("does not list a claimed job to a leftover guest cookie after sign-in", async () => {
+    const guest = "11111111-1111-4111-8111-111111111111";
+    const userA = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const userB = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+    const draft = await saveDraft(sampleRecipe, { guestId: guest });
+    const job = await createJob({
+      draftId: draft.id,
+      goals: ["healthier_overall"],
+      preference: "balanced",
+      dietary: [],
+      guestId: guest,
+    });
+    await assignJobOwner({ guestId: guest, userId: userA });
+
+    expect(await listJobsForAccount({ userId: userB, guestId: guest })).toEqual([]);
+    expect((await listJobsForAccount({ userId: userA, guestId: guest })).map((item) => item.id)).toContain(
+      job.id,
+    );
+    expect(await getAccessibleJob(job.id, { userId: userB, guestId: guest })).toBeNull();
   });
 });

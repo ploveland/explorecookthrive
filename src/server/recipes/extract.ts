@@ -4,6 +4,7 @@ import { fetchRecipeHtml } from "./fetch-html";
 import { parsePastedRecipe } from "./parse-paste";
 import { recipeFromJsonLd, recipeFromMicrodata } from "./parse-jsonld";
 import { ExtractError, extractRequestSchema, type ExtractedRecipe, type RecipeDraft } from "./schema";
+import { assertSafeHttpUrl } from "./ssrf";
 import { readUrlCache, writeUrlCache } from "./url-cache";
 
 export async function extractRecipe(
@@ -23,6 +24,8 @@ export async function extractRecipe(
     });
     return saveDraft(recipe, draftOptions);
   }
+
+  await assertSafeHttpUrl(request.url);
 
   const cached = await readUrlCache(request.url);
   if (cached) {

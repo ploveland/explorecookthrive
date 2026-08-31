@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { toggleFavorite } from "@/server/accounts/favorites";
+import { FavoriteError, toggleFavorite } from "@/server/accounts/favorites";
 import { currentAccount } from "@/server/accounts/session";
 import { publicSlugSchema } from "@/server/fs/ids";
 
@@ -16,7 +16,14 @@ export async function POST(request: Request) {
       { status: 401 },
     );
   }
-  const body = bodySchema.parse(await request.json());
-  const result = await toggleFavorite(account.userId, body.slug);
-  return NextResponse.json(result);
+  try {
+    const body = bodySchema.parse(await request.json());
+    const result = await toggleFavorite(account.userId, body.slug);
+    return NextResponse.json(result);
+  } catch (error) {
+    if (error instanceof FavoriteError) {
+      return NextResponse.json({ code: error.code, message: error.message }, { status: 404 });
+    }
+    throw error;
+  }
 }

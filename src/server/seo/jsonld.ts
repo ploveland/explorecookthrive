@@ -1,3 +1,4 @@
+import { safeHttpUrl } from "@/lib/safe-http-url";
 import type { RatingSummary } from "@/server/community/policy";
 import { DIETARY_COPY, type DietaryRequirementId } from "@/server/convert/schema";
 import { isRecipeFoodPhoto } from "@/server/library/image";
@@ -122,8 +123,8 @@ function recipeImageJsonLd(recipe: PublishedRecipe) {
   if (!isRecipeFoodPhoto(image)) return undefined;
   return {
     "@type": "ImageObject",
-    url: image.url,
-    contentUrl: image.url,
+    url: safeHttpUrl(image.url) ?? undefined,
+    contentUrl: safeHttpUrl(image.url) ?? undefined,
     caption: image.alt,
     width: image.width ?? undefined,
     height: image.height ?? undefined,
@@ -141,7 +142,7 @@ function isBasedOnJsonLd(recipe: PublishedRecipe) {
   return compact({
     "@type": "CreativeWork",
     name: recipe.originalTitle || undefined,
-    url: recipe.sourceUrl || undefined,
+    url: safeHttpUrl(recipe.sourceUrl) ?? undefined,
     author: recipe.sourceAuthor?.trim()
       ? { "@type": "Person", name: recipe.sourceAuthor.trim() }
       : undefined,

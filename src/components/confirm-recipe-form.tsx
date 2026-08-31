@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { SafeHttpLink } from "@/components/safe-http-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -112,9 +113,9 @@ export function ConfirmRecipeForm({
       {initialRecipe.sourceUrl ? (
         <p className="text-sm text-teal/80">
           Source:{" "}
-          <a className="underline" href={initialRecipe.sourceUrl}>
+          <SafeHttpLink className="underline" href={initialRecipe.sourceUrl}>
             {initialRecipe.sourceSite ?? initialRecipe.sourceUrl}
-          </a>
+          </SafeHttpLink>
           {initialRecipe.sourceAuthor ? ` · ${initialRecipe.sourceAuthor}` : ""}
         </p>
       ) : null}

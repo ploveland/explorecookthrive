@@ -5,7 +5,7 @@ import { compareRecipeNutrition, type NutritionIngredientInput } from "../nutrit
 import { inputFromExtractedRecipe } from "./from-recipe";
 import { sameKitchen } from "./versions";
 import { hasLiveLlm, runConversion } from "./run";
-import { kitchenOwns } from "../accounts/kitchen-access";
+import { kitchenOwns, ownedOrNull, type KitchenActor } from "../accounts/kitchen-access";
 import {
   InvalidStorageIdError,
   dataDir,
@@ -56,11 +56,10 @@ export async function getJob(id: string): Promise<ConversionJob | null> {
 
 export async function getAccessibleJob(
   id: string,
-  actor: { userId?: string | null; guestId?: string | null },
+  actor: KitchenActor,
 ): Promise<ConversionJob | null> {
   const job = await getJob(id);
-  if (!job || !kitchenOwns(job, actor)) return null;
-  return job;
+  return ownedOrNull(job, actor);
 }
 
 export class JobError extends Error {
@@ -89,16 +88,9 @@ export async function listJobs(): Promise<ConversionJob[]> {
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
-export async function listJobsForAccount(input: {
-  userId?: string | null;
-  guestId?: string | null;
-}): Promise<ConversionJob[]> {
+export async function listJobsForAccount(actor: KitchenActor): Promise<ConversionJob[]> {
   const jobs = await listJobs();
-  return jobs.filter((job) => {
-    if (input.userId && job.userId === input.userId) return true;
-    if (input.guestId && job.guestId === input.guestId) return true;
-    return false;
-  });
+  return jobs.filter((job) => kitchenOwns(job, actor));
 }
 
 export async function assignJobOwner(input: { guestId: string; userId: string }) {
@@ -160,8 +152,8 @@ export async function createJob(input: {
   });
 }
 
-export async function ensureDraftFromJob(jobId: string) {
-  const job = await getJob(jobId);
+export async function ensureDraftFromJob(jobId: string, actor: KitchenActor) {
+  const job = await getAccessibleJob(jobId, actor);
   if (!job) {
     throw new JobError("job_not_found", "We could not find that conversion.");
   }

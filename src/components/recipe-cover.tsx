@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { safeHttpUrl } from "@/lib/safe-http-url";
 import { cn } from "@/lib/utils";
 import { planRecipeCover, type CoverInput } from "@/lib/recipe-cover";
 
@@ -16,7 +17,8 @@ export function RecipeCover({
   children?: ReactNode;
 }) {
   const cover = planRecipeCover(seed);
-  const foodPhoto = photo?.url ? photo : null;
+  const photoUrl = photo?.url ? safeHttpUrl(photo.url) : null;
+  const foodPhoto = photoUrl && photo ? { url: photoUrl, alt: photo.alt } : null;
   const decorative = !children && !foodPhoto;
 
   return (

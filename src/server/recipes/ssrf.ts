@@ -1,51 +1,72 @@
-import { lookup } from "node:dns/promises";
+import { lookup as dnsLookup } from "node:dns/promises";
 import { isIP } from "node:net";
+import ipaddr from "ipaddr.js";
 import { ExtractError } from "./schema";
 
-const PRIVATE_V4 = [
-  /^0\./,
-  /^10\./,
-  /^127\./,
-  /^169\.254\./,
-  /^192\.168\./,
-  /^172\.(1[6-9]|2\d|3[01])\./,
-];
+export type LookupAddress = { address: string; family: 4 | 6 };
+export type LookupAll = (hostname: string) => Promise<LookupAddress[]>;
 
-function isPrivateIPv4(ip: string) {
-  return PRIVATE_V4.some((pattern) => pattern.test(ip));
-}
-
-function isPrivateIPv6(ip: string) {
-  const normalized = ip.toLowerCase();
-  return (
-    normalized === "::1" ||
-    normalized.startsWith("fc") ||
-    normalized.startsWith("fd") ||
-    normalized.startsWith("fe80") ||
-    normalized.startsWith("::ffff:127.") ||
-    normalized.startsWith("::ffff:10.") ||
-    normalized.startsWith("::ffff:192.168.")
-  );
-}
-
-function isBlockedHostname(hostname: string) {
-  const host = hostname.replace(/\.+$/, "").toLowerCase();
-  return (
-    host === "localhost" ||
-    host.endsWith(".localhost") ||
-    host.endsWith(".local") ||
-    host === "0.0.0.0" ||
-    host === "[::1]" ||
-    host.includes("metadata.google.internal")
-  );
-}
-
-export type SafeUrl = {
+export type SafeHttpTarget = {
   href: string;
   hostname: string;
+  host: string;
+  pin: LookupAddress;
 };
 
-export async function assertSafeHttpUrl(input: string): Promise<SafeUrl> {
+const BLOCKED_HOSTS = new Set([
+  "localhost",
+  "metadata.google.internal",
+  "metadata.internal",
+  "instance-data",
+  "kubernetes.default",
+  "kubernetes.default.svc",
+  "kubernetes.default.svc.cluster.local",
+]);
+
+async function defaultLookup(hostname: string): Promise<LookupAddress[]> {
+  const addresses = await dnsLookup(hostname, { all: true, verbatim: true });
+  return addresses.map((entry) => ({
+    address: entry.address,
+    family: entry.family === 6 ? 6 : 4,
+  }));
+}
+
+export function isBlockedIp(ip: string): boolean {
+  try {
+    return ipaddr.process(ip).range() !== "unicast";
+  } catch {
+    return true;
+  }
+}
+
+export function isBlockedHostname(hostname: string) {
+  const host = hostname.replace(/\.+$/, "").toLowerCase();
+  if (!host) return true;
+  if (BLOCKED_HOSTS.has(host)) return true;
+  if (host.endsWith(".localhost")) return true;
+  if (host.endsWith(".local")) return true;
+  if (host.endsWith(".internal")) return true;
+  if (host.endsWith(".corp")) return true;
+  if (host.endsWith(".lan")) return true;
+  if (host.endsWith(".home")) return true;
+  if (host.includes("metadata.google.internal")) return true;
+  return false;
+}
+
+function unwrapIpLiteral(hostname: string): string | null {
+  const candidate =
+    hostname.startsWith("[") && hostname.endsWith("]") ? hostname.slice(1, -1) : hostname;
+  return isIP(candidate) ? candidate : null;
+}
+
+function pinFamily(ip: string): 4 | 6 {
+  return isIP(ip) === 6 ? 6 : 4;
+}
+
+export async function assertSafeHttpUrl(
+  input: string,
+  lookupFn: LookupAll = defaultLookup,
+): Promise<SafeHttpTarget> {
   let parsed: URL;
   try {
     parsed = new URL(input.trim());
@@ -64,27 +85,41 @@ export async function assertSafeHttpUrl(input: string): Promise<SafeUrl> {
   }
 
   const host = parsed.hostname;
-  if (isIP(host)) {
-    if (isPrivateIPv4(host) || isPrivateIPv6(host)) {
+  const ipLiteral = unwrapIpLiteral(host);
+  if (ipLiteral) {
+    if (isBlockedIp(ipLiteral)) {
       throw new ExtractError("blocked_url", "We cannot open that address.");
     }
-    return { href: parsed.href, hostname: host };
+    return {
+      href: parsed.href,
+      hostname: host,
+      host: parsed.host,
+      pin: { address: ipLiteral, family: pinFamily(ipLiteral) },
+    };
   }
 
+  let addresses: LookupAddress[];
   try {
-    const addresses = await lookup(host, { all: true });
-    if (addresses.length === 0) {
-      throw new ExtractError("fetch_failed", "We could not resolve that site.");
-    }
-    for (const address of addresses) {
-      if (isPrivateIPv4(address.address) || isPrivateIPv6(address.address)) {
-        throw new ExtractError("blocked_url", "We cannot open that address.");
-      }
-    }
+    addresses = await lookupFn(host);
   } catch (error) {
     if (error instanceof ExtractError) throw error;
     throw new ExtractError("fetch_failed", "We could not resolve that site.");
   }
 
-  return { href: parsed.href, hostname: host };
+  if (addresses.length === 0) {
+    throw new ExtractError("fetch_failed", "We could not resolve that site.");
+  }
+
+  for (const entry of addresses) {
+    if (isBlockedIp(entry.address) || isBlockedHostname(entry.address)) {
+      throw new ExtractError("blocked_url", "We cannot open that address.");
+    }
+  }
+
+  return {
+    href: parsed.href,
+    hostname: host,
+    host: parsed.host,
+    pin: addresses[0]!,
+  };
 }

@@ -124,6 +124,23 @@ describe("draft API path traversal and auth", () => {
     expect(written.status).toBe(404);
   });
 
+  it("does not store a javascript source URL from a draft patch", async () => {
+    const { PATCH } = await import("./route");
+    const draft = await saveDraft(recipe, { guestId: GUEST });
+    const written = await PATCH(
+      new Request("http://localhost/api/recipes/drafts/" + draft.id, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipe: { ...recipe, sourceUrl: "javascript:alert(1)" },
+        }),
+      }),
+      { params: Promise.resolve({ id: draft.id }) },
+    );
+    expect(written.status).toBe(200);
+    expect(((await written.json()) as { recipe: { sourceUrl: string | null } }).recipe.sourceUrl).toBeNull();
+  });
+
   it("rejects traversal ids on read and write without touching files outside drafts", async () => {
     const { GET, PATCH } = await import("./route");
     const pkg = await readFile(path.join(process.cwd(), "package.json"), "utf8");

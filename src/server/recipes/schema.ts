@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { nullableSafeHttpUrl } from "@/lib/safe-http-url";
 
 export const extractedIngredientSchema = z.object({
   rawText: z.string().min(1),
@@ -18,7 +19,10 @@ export const extractedRecipeSchema = z.object({
   category: z.string().nullable(),
   ingredients: z.array(extractedIngredientSchema).min(1),
   instructions: z.array(z.string().min(1)).min(1),
-  sourceUrl: z.string().nullable(),
+  sourceUrl: z
+    .string()
+    .nullable()
+    .transform((value) => nullableSafeHttpUrl(value)),
   sourceSite: z.string().nullable(),
   sourceAuthor: z.string().nullable(),
   originalTitle: z.string().nullable(),

@@ -1,3 +1,4 @@
+import { safeHttpUrl } from "@/lib/safe-http-url";
 import type { RecipeImage, RecipeImageSource } from "./schema";
 
 const FOOD_PHOTO_SOURCES: readonly RecipeImageSource[] = [
@@ -8,7 +9,7 @@ const FOOD_PHOTO_SOURCES: readonly RecipeImageSource[] = [
 
 /** Photos of the completed dish. Generated/illustrative art is not a Google Recipe image. */
 export function isRecipeFoodPhoto(image: RecipeImage | null | undefined): image is RecipeImage {
-  if (!image?.url) return false;
+  if (!image?.url || !safeHttpUrl(image.url)) return false;
   return FOOD_PHOTO_SOURCES.includes(image.source);
 }
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
 import { INTAKE_STORAGE_KEY, parseIntake } from "@/lib/intake";
+import { safeHttpUrl } from "@/lib/safe-http-url";
 import { Button } from "@/components/ui/button";
 
 function subscribe() {
@@ -36,9 +37,16 @@ export function IntakePreview() {
       {intake.mode === "url" ? (
         <p>
           <span className="font-medium">Source URL: </span>
-          <a className="break-all text-teal underline" href={intake.url}>
-            {intake.url}
-          </a>
+          {(() => {
+            const href = safeHttpUrl(intake.url);
+            return href ? (
+              <a className="break-all text-teal underline" href={href} rel="noreferrer noopener">
+                {intake.url}
+              </a>
+            ) : (
+              <span className="break-all text-teal/80">{intake.url}</span>
+            );
+          })()}
         </p>
       ) : (
         <pre className="max-h-[28rem] overflow-auto whitespace-pre-wrap rounded-2xl bg-white/80 p-4 text-sm leading-6 text-teal ring-1 ring-teal/10">

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { nullableSafeHttpUrl, safeHttpUrl } from "@/lib/safe-http-url";
 import { conversionOutputSchema } from "../ai/types";
 import {
   dietaryRequirementSchema,
@@ -21,7 +22,9 @@ export type RecipeImageSource = (typeof recipeImageSources)[number];
 
 /** Optional photo of the completed Thrive Version. Never a hotlinked source-site image. */
 export const recipeImageSchema = z.object({
-  url: z.string().url(),
+  url: z.string().url().refine((value) => Boolean(safeHttpUrl(value)), {
+    message: "Image URLs must use http or https.",
+  }),
   alt: z.string().min(1),
   width: z.number().int().positive().nullable().default(null),
   height: z.number().int().positive().nullable().default(null),
@@ -37,7 +40,10 @@ export const publishedRecipeSchema = z.object({
   title: z.string(),
   description: z.string(),
   originalTitle: z.string(),
-  sourceUrl: z.string().nullable(),
+  sourceUrl: z
+    .string()
+    .nullable()
+    .transform((value) => nullableSafeHttpUrl(value)),
   sourceSite: z.string().nullable(),
   sourceAuthor: z.string().nullable(),
   servings: z.number().positive(),

@@ -4,7 +4,7 @@ import { RecipeCard } from "@/components/recipe-card";
 import { Button } from "@/components/ui/button";
 import { listFavoriteSlugs } from "@/server/accounts/favorites";
 import { currentAccount } from "@/server/accounts/session";
-import { getPublishedBySlug } from "@/server/library/store";
+import { getVisibleBySlug } from "@/server/library/store";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +29,7 @@ export default async function FavoritesPage() {
   }
 
   const slugs = await listFavoriteSlugs(account.userId);
-  const recipes = (await Promise.all(slugs.map((slug) => getPublishedBySlug(slug)))).filter(
+  const recipes = (await Promise.all(slugs.map((slug) => getVisibleBySlug(slug, account.userId)))).filter(
     (recipe) => recipe !== null,
   );
 

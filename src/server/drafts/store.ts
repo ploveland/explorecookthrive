@@ -1,13 +1,10 @@
 import { InvalidStorageIdError, dataDir, newStorageId, readConfinedJson, readConfinedJsonRecords, writeConfinedJson } from "../fs/safe-path";
-import { kitchenOwns } from "../accounts/kitchen-access";
+import { ownedOrNull, type KitchenActor } from "../accounts/kitchen-access";
 import { extractedRecipeSchema, recipeDraftSchema, type ExtractedRecipe, type RecipeDraft } from "../recipes/schema";
 
 const DIR = dataDir("drafts");
 
-export type DraftOwner = {
-  guestId?: string | null;
-  userId?: string | null;
-};
+export type DraftOwner = KitchenActor;
 
 export async function saveDraft(
   recipe: ExtractedRecipe,
@@ -40,8 +37,17 @@ export async function getDraft(id: string): Promise<RecipeDraft | null> {
 
 export async function getAccessibleDraft(id: string, actor: DraftOwner): Promise<RecipeDraft | null> {
   const draft = await getDraft(id);
-  if (!draft || !kitchenOwns(draft, actor)) return null;
-  return draft;
+  return ownedOrNull(draft, actor);
+}
+
+export async function updateAccessibleDraft(
+  id: string,
+  recipe: ExtractedRecipe,
+  actor: DraftOwner,
+): Promise<RecipeDraft | null> {
+  const existing = await getAccessibleDraft(id, actor);
+  if (!existing) return null;
+  return updateDraft(existing.id, recipe);
 }
 
 export async function updateDraft(id: string, recipe: ExtractedRecipe): Promise<RecipeDraft | null> {

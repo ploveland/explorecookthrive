@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { SafeHttpLink } from "@/components/safe-http-link";
 import { ConvertNutrition } from "@/components/convert-nutrition";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -102,9 +103,9 @@ export default async function PublishedRecipePage({
           {recipe.sourceUrl ? (
             <>
               {" "}
-              <a className="underline-offset-4 hover:underline" href={recipe.sourceUrl} rel="noreferrer">
+              <SafeHttpLink className="underline-offset-4 hover:underline" href={recipe.sourceUrl}>
                 Original source
-              </a>
+              </SafeHttpLink>
             </>
           ) : null}
         </p>

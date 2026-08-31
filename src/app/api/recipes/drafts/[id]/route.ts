@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { currentAccount } from "@/server/accounts/session";
 import { hasKitchenSession } from "@/server/accounts/kitchen-access";
-import { getAccessibleDraft, updateDraft } from "@/server/drafts/store";
+import { getAccessibleDraft, updateAccessibleDraft } from "@/server/drafts/store";
 import { jsonErrorFromUnknown, notFoundResponse, sessionRequiredResponse } from "@/server/http/api-error";
 import { extractedRecipeSchema } from "@/server/recipes/schema";
 
@@ -34,7 +34,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
     const body = await request.json();
     const recipe = extractedRecipeSchema.parse(body.recipe ?? body);
-    const draft = await updateDraft(existing.id, recipe);
+    const draft = await updateAccessibleDraft(existing.id, recipe, account);
     if (!draft) {
       return notFoundResponse("We could not find that draft.");
     }

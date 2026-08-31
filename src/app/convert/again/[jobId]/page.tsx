@@ -14,6 +14,6 @@ export default async function ConvertAgainPage({
   const account = await currentAccount();
   const existing = await getAccessibleJob(jobId, account).catch(notFoundOnInvalidId);
   if (!existing) notFound();
-  const { draft, job } = await ensureDraftFromJob(existing.id);
+  const { draft, job } = await ensureDraftFromJob(existing.id, account);
   redirect(`/convert/goals/${draft.id}?from=${job.id}`);
 }

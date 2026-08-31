@@ -1,3 +1,4 @@
+import { canViewPublishedRecipe, ownsPublishedRecipe } from "../accounts/kitchen-access";
 import type { ConversionJob } from "../convert/schema";
 import {
   dataDir,
@@ -15,7 +16,7 @@ const DIR = dataDir("library");
 
 export class LibraryError extends Error {
   constructor(
-    public readonly code: "job_not_ready" | "job_not_found",
+    public readonly code: "job_not_ready" | "job_not_found" | "not_owner",
     message: string,
   ) {
     super(message);
@@ -103,9 +104,8 @@ export async function getVisibleBySlug(
 ): Promise<PublishedRecipe | null> {
   const recipe = await getPublishedBySlug(slug);
   if (!recipe) return null;
-  if (recipe.visibility === "public" || recipe.visibility === "unlisted") return recipe;
-  if (viewerId && recipe.ownerId === viewerId) return recipe;
-  return null;
+  if (!canViewPublishedRecipe(recipe, viewerId)) return null;
+  return recipe;
 }
 
 export async function setRecipeVisibility(
@@ -114,7 +114,7 @@ export async function setRecipeVisibility(
   visibility: PublishedRecipe["visibility"],
 ): Promise<PublishedRecipe | null> {
   const recipe = await getPublishedBySlug(slug);
-  if (!recipe || recipe.ownerId !== ownerId) return null;
+  if (!recipe || !ownsPublishedRecipe(recipe, ownerId)) return null;
   const next = publishedRecipeSchema.parse({ ...recipe, visibility });
   await writeConfinedJson(DIR, next.id, JSON.stringify(next, null, 2));
   return next;
@@ -134,7 +134,12 @@ export async function publishFromJob(
   }
 
   const existing = await getPublishedByJobId(job.id);
-  if (existing) return existing;
+  if (existing) {
+    if (owner?.ownerId && existing.ownerId && existing.ownerId !== owner.ownerId) {
+      throw new LibraryError("not_owner", "Only the kitchen that published this can publish it again.");
+    }
+    return existing;
+  }
 
   const thrive = job.output.thriveVersion;
   const id = newStorageId();

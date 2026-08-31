@@ -4,11 +4,14 @@ import path from "node:path";
 import { createCollection, addToCollection, listCollections } from "./collections";
 import { listFavoriteSlugs, toggleFavorite } from "./favorites";
 import { AccountError, createUser, getUserById, setPasswordByEmail, verifyUser } from "./users";
+import { dataDir, newStorageId, writeConfinedJson } from "../fs/safe-path";
+import { publishedRecipeSchema } from "../library/schema";
 
 afterEach(async () => {
   await rm(path.join(process.cwd(), ".data", "users"), { recursive: true, force: true });
   await rm(path.join(process.cwd(), ".data", "favorites"), { recursive: true, force: true });
   await rm(path.join(process.cwd(), ".data", "collections"), { recursive: true, force: true });
+  await rm(path.join(process.cwd(), ".data", "library"), { recursive: true, force: true });
 });
 
 describe("users", () => {
@@ -65,6 +68,58 @@ describe("favorites and collections", () => {
       name: "Cook",
       password: "cornbread1",
     });
+    const id = newStorageId();
+    const recipe = publishedRecipeSchema.parse({
+      id,
+      slug: "weeknight-chili",
+      jobId: newStorageId(),
+      title: "Weeknight chili",
+      description: "A pot of chili.",
+      originalTitle: "Weeknight chili",
+      sourceUrl: "https://example.com/chili",
+      sourceSite: "example.com",
+      sourceAuthor: null,
+      servings: 6,
+      prepMinutes: 15,
+      cookMinutes: 40,
+      cuisine: "American",
+      category: "dinner",
+      goals: ["healthier_overall"],
+      dietary: [],
+      preference: "balanced",
+      tasteImpact: "minimal",
+      tags: ["dinner"],
+      ingredients: [
+        {
+          rawText: "1 onion",
+          name: "onion",
+          quantity: 1,
+          unit: null,
+          preparation: null,
+          assumptionNote: null,
+        },
+      ],
+      instructions: ["Simmer."],
+      changes: [
+        {
+          original: "beef",
+          suggested: "turkey",
+          nutritionReason: "leaner",
+          flavorEffect: "milder",
+          textureEffect: "same",
+        },
+      ],
+      wouldNotChange: [{ item: "chili powder", reason: "It is the dish." }],
+      nutrition: null,
+      provider: "mock",
+      ownerId: user.id,
+      ownerName: "Cook",
+      visibility: "public",
+      publishedAt: new Date().toISOString(),
+      image: null,
+    });
+    await writeConfinedJson(dataDir("library"), recipe.id, JSON.stringify(recipe, null, 2));
+
     await toggleFavorite(user.id, "weeknight-chili");
     expect(await listFavoriteSlugs(user.id)).toEqual(["weeknight-chili"]);
     await toggleFavorite(user.id, "weeknight-chili");
