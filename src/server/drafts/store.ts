@@ -1,48 +1,76 @@
-import { randomUUID } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { extractedRecipeSchema, type ExtractedRecipe, type RecipeDraft } from "../recipes/schema";
+import { InvalidStorageIdError, dataDir, newStorageId, readConfinedJson, readConfinedJsonRecords, writeConfinedJson } from "../fs/safe-path";
+import { kitchenOwns } from "../accounts/kitchen-access";
+import { extractedRecipeSchema, recipeDraftSchema, type ExtractedRecipe, type RecipeDraft } from "../recipes/schema";
 
-const DIR = path.join(process.cwd(), ".data", "drafts");
+const DIR = dataDir("drafts");
 
-async function ensureDir() {
-  await mkdir(DIR, { recursive: true });
-}
+export type DraftOwner = {
+  guestId?: string | null;
+  userId?: string | null;
+};
 
-function fileFor(id: string) {
-  return path.join(DIR, `${id}.json`);
-}
-
-export async function saveDraft(recipe: ExtractedRecipe, id: string = randomUUID()): Promise<RecipeDraft> {
-  await ensureDir();
+export async function saveDraft(
+  recipe: ExtractedRecipe,
+  options: { id?: string } & DraftOwner = {},
+): Promise<RecipeDraft> {
+  const id = options.id ?? newStorageId();
+  const existing = options.id ? await getDraft(id).catch(() => null) : null;
   const now = new Date().toISOString();
-  const draft: RecipeDraft = {
+  const draft = recipeDraftSchema.parse({
     id,
     recipe: extractedRecipeSchema.parse(recipe),
-    createdAt: now,
+    guestId: options.guestId ?? existing?.guestId ?? null,
+    userId: options.userId ?? existing?.userId ?? null,
+    createdAt: existing?.createdAt ?? now,
     updatedAt: now,
-  };
-  await writeFile(fileFor(id), JSON.stringify(draft, null, 2), "utf8");
+  });
+  await writeConfinedJson(DIR, draft.id, JSON.stringify(draft, null, 2));
   return draft;
 }
 
 export async function getDraft(id: string): Promise<RecipeDraft | null> {
   try {
-    const raw = await readFile(fileFor(id), "utf8");
-    return JSON.parse(raw) as RecipeDraft;
-  } catch {
+    const raw = await readConfinedJson(DIR, id);
+    return recipeDraftSchema.parse(JSON.parse(raw));
+  } catch (error) {
+    if (error instanceof InvalidStorageIdError) throw error;
     return null;
   }
+}
+
+export async function getAccessibleDraft(id: string, actor: DraftOwner): Promise<RecipeDraft | null> {
+  const draft = await getDraft(id);
+  if (!draft || !kitchenOwns(draft, actor)) return null;
+  return draft;
 }
 
 export async function updateDraft(id: string, recipe: ExtractedRecipe): Promise<RecipeDraft | null> {
   const existing = await getDraft(id);
   if (!existing) return null;
-  const draft: RecipeDraft = {
+  const draft = recipeDraftSchema.parse({
     ...existing,
     recipe: extractedRecipeSchema.parse(recipe),
     updatedAt: new Date().toISOString(),
-  };
-  await writeFile(fileFor(id), JSON.stringify(draft, null, 2), "utf8");
+  });
+  await writeConfinedJson(DIR, draft.id, JSON.stringify(draft, null, 2));
   return draft;
+}
+
+export async function listDrafts(): Promise<RecipeDraft[]> {
+  return readConfinedJsonRecords(DIR, (raw) => recipeDraftSchema.parse(raw));
+}
+
+export async function assignDraftOwner(input: { guestId: string; userId: string }) {
+  const drafts = await listDrafts();
+  await Promise.all(
+    drafts
+      .filter((draft) => draft.guestId === input.guestId && !draft.userId)
+      .map((draft) =>
+        writeConfinedJson(
+          DIR,
+          draft.id,
+          JSON.stringify({ ...draft, userId: input.userId }, null, 2),
+        ),
+      ),
+  );
 }

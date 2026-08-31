@@ -1,10 +1,16 @@
-import { createHash, randomBytes } from "node:crypto";
-import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { log } from "../log";
 import { allowResetPreview, mailerConfigured, sendMail, type OutgoingMail } from "../mail/send";
 import { siteUrl } from "../seo/site";
+import {
+  dataDir,
+  listConfinedJsonIds,
+  readConfinedJson,
+  removeConfinedJson,
+  sha256Hex,
+  writeConfinedJson,
+} from "../fs/safe-path";
 import {
   PASSWORD_MIN_LENGTH,
   RESET_EMAILS_PER_HOUR,
@@ -12,8 +18,8 @@ import {
 } from "./constants";
 import { AccountError, getUserByEmail, updatePassword, type PublicUser } from "./users";
 
-const DIR = path.join(process.cwd(), ".data", "password-resets");
-const RATE_DIR = path.join(DIR, "rate");
+const DIR = dataDir("password-resets");
+const RATE_DIR = dataDir("password-resets", "rate");
 
 const tokenRecordSchema = z.object({
   userId: z.string(),
@@ -29,15 +35,7 @@ const rateRecordSchema = z.object({
 export type PasswordResetMailer = (message: OutgoingMail) => Promise<"sent" | "outbox">;
 
 function hashToken(raw: string) {
-  return createHash("sha256").update(raw).digest("hex");
-}
-
-function tokenFile(hash: string) {
-  return path.join(DIR, `${hash}.json`);
-}
-
-function rateFile(userId: string) {
-  return path.join(RATE_DIR, `${userId}.json`);
+  return sha256Hex(raw);
 }
 
 function firstName(name: string) {
@@ -83,14 +81,9 @@ function escapeHtml(value: string) {
     .replaceAll('"', "&quot;");
 }
 
-async function ensureDir() {
-  await mkdir(DIR, { recursive: true });
-  await mkdir(RATE_DIR, { recursive: true });
-}
-
 async function readToken(hash: string) {
   try {
-    const raw = await readFile(tokenFile(hash), "utf8");
+    const raw = await readConfinedJson(DIR, hash, "hex64");
     return tokenRecordSchema.parse(JSON.parse(raw));
   } catch {
     return null;
@@ -98,21 +91,16 @@ async function readToken(hash: string) {
 }
 
 async function listTokenHashes() {
-  try {
-    const names = await readdir(DIR);
-    return names.filter((name) => name.endsWith(".json"));
-  } catch {
-    return [];
-  }
+  return listConfinedJsonIds(DIR, "hex64");
 }
 
 async function invalidateTokensForUser(userId: string) {
-  const names = await listTokenHashes();
+  const hashes = await listTokenHashes();
   await Promise.all(
-    names.map(async (name) => {
-      const record = await readToken(name.replace(/\.json$/, ""));
+    hashes.map(async (hash) => {
+      const record = await readToken(hash);
       if (record?.userId === userId && !record.usedAt) {
-        await rm(path.join(DIR, name), { force: true });
+        await removeConfinedJson(DIR, hash, "hex64");
       }
     }),
   );
@@ -120,7 +108,7 @@ async function invalidateTokensForUser(userId: string) {
 
 async function readRate(userId: string) {
   try {
-    const raw = await readFile(rateFile(userId), "utf8");
+    const raw = await readConfinedJson(RATE_DIR, userId);
     return rateRecordSchema.parse(JSON.parse(raw));
   } catch {
     return { sentAt: [] as number[] };
@@ -138,8 +126,7 @@ async function recordSend(userId: string, now: number) {
   const cutoff = now - 60 * 60 * 1000;
   const rate = await readRate(userId);
   const sentAt = [...rate.sentAt.filter((stamp) => stamp >= cutoff), now];
-  await mkdir(RATE_DIR, { recursive: true });
-  await writeFile(rateFile(userId), JSON.stringify({ sentAt }, null, 2), "utf8");
+  await writeConfinedJson(RATE_DIR, userId, JSON.stringify({ sentAt }, null, 2));
 }
 
 export async function issuePasswordReset(
@@ -149,15 +136,15 @@ export async function issuePasswordReset(
   const user = await getUserByEmail(email);
   if (!user) return null;
 
-  await ensureDir();
   await invalidateTokensForUser(user.id);
 
   const rawToken = randomBytes(32).toString("base64url");
   const hash = hashToken(rawToken);
   const now = new Date();
   const ttlMs = options?.ttlMs ?? RESET_TOKEN_TTL_MS;
-  await writeFile(
-    tokenFile(hash),
+  await writeConfinedJson(
+    DIR,
+    hash,
     JSON.stringify(
       {
         userId: user.id,
@@ -168,7 +155,7 @@ export async function issuePasswordReset(
       null,
       2,
     ),
-    "utf8",
+    "hex64",
   );
   return { rawToken, user };
 }
@@ -188,10 +175,11 @@ export async function consumePasswordReset(rawToken: string, password: string): 
   }
 
   const updated = await updatePassword(record.userId, password);
-  await writeFile(
-    tokenFile(hash),
+  await writeConfinedJson(
+    DIR,
+    hash,
     JSON.stringify({ ...record, usedAt: new Date().toISOString() }, null, 2),
-    "utf8",
+    "hex64",
   );
   await invalidateTokensForUser(record.userId);
   log.info("password.reset_complete", { success: true });

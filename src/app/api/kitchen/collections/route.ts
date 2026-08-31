@@ -7,14 +7,16 @@ import {
   listCollections,
 } from "@/server/accounts/collections";
 import { currentAccount } from "@/server/accounts/session";
+import { publicSlugSchema, storageUuidSchema } from "@/server/fs/ids";
+import { jsonErrorFromUnknown } from "@/server/http/api-error";
 
 const createSchema = z.object({
   name: z.string().min(1),
 });
 
 const addSchema = z.object({
-  collectionId: z.string().min(1),
-  slug: z.string().min(1),
+  collectionId: storageUuidSchema,
+  slug: publicSlugSchema,
 });
 
 export async function GET() {
@@ -54,9 +56,12 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-    return NextResponse.json(
-      { code: "collection_failed", message: "We could not update that collection." },
-      { status: 500 },
+    return (
+      jsonErrorFromUnknown(error) ??
+      NextResponse.json(
+        { code: "collection_failed", message: "We could not update that collection." },
+        { status: 500 },
+      )
     );
   }
 }

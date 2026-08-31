@@ -1,5 +1,7 @@
 import { notFound, redirect } from "next/navigation";
-import { ensureDraftFromJob, getJob } from "@/server/convert/jobs";
+import { currentAccount } from "@/server/accounts/session";
+import { ensureDraftFromJob, getAccessibleJob } from "@/server/convert/jobs";
+import { notFoundOnInvalidId } from "@/server/http/not-found-on-invalid-id";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +11,8 @@ export default async function ConvertAgainPage({
   params: Promise<{ jobId: string }>;
 }) {
   const { jobId } = await params;
-  const existing = await getJob(jobId);
+  const account = await currentAccount();
+  const existing = await getAccessibleJob(jobId, account).catch(notFoundOnInvalidId);
   if (!existing) notFound();
   const { draft, job } = await ensureDraftFromJob(existing.id);
   redirect(`/convert/goals/${draft.id}?from=${job.id}`);

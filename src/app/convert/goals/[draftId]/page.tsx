@@ -2,8 +2,9 @@ import { notFound } from "next/navigation";
 import { ConvertGoalsForm } from "@/components/convert-goals-form";
 import { gateConversion } from "@/server/accounts/session";
 import { authDailyLimit, guestConversionLimit } from "@/server/accounts/policy";
-import { getJob } from "@/server/convert/jobs";
-import { getDraft } from "@/server/drafts/store";
+import { getAccessibleJob } from "@/server/convert/jobs";
+import { getAccessibleDraft } from "@/server/drafts/store";
+import { notFoundOnInvalidId } from "@/server/http/not-found-on-invalid-id";
 
 export default async function ConvertGoalsPage({
   params,
@@ -14,10 +15,10 @@ export default async function ConvertGoalsPage({
 }) {
   const { draftId } = await params;
   const { from } = await searchParams;
-  const draft = await getDraft(draftId);
-  if (!draft) notFound();
   const conversion = await gateConversion();
-  const fromJob = from ? await getJob(from) : null;
+  const draft = await getAccessibleDraft(draftId, conversion).catch(notFoundOnInvalidId);
+  if (!draft) notFound();
+  const fromJob = from ? await getAccessibleJob(from, conversion).catch(notFoundOnInvalidId) : null;
   const again = Boolean(fromJob && fromJob.draftId === draft.id);
 
   return (

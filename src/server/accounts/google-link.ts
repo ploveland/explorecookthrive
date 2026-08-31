@@ -1,9 +1,8 @@
-import { createHash, randomBytes } from "node:crypto";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { randomBytes } from "node:crypto";
 import { z } from "zod";
+import { dataDir, readConfinedJson, removeConfinedJson, sha256Hex, writeConfinedJson } from "../fs/safe-path";
 
-const DIR = path.join(process.cwd(), ".data", "google-links");
+const DIR = dataDir("google-links");
 const TTL_MS = 15 * 60 * 1000;
 
 const recordSchema = z.object({
@@ -17,19 +16,11 @@ const recordSchema = z.object({
 });
 
 function hashToken(raw: string) {
-  return createHash("sha256").update(raw).digest("hex");
-}
-
-function fileFor(hash: string) {
-  return path.join(DIR, `${hash}.json`);
+  return sha256Hex(raw);
 }
 
 function safeNext(next?: string | null) {
   return next?.startsWith("/") ? next : "/kitchen";
-}
-
-async function ensureDir() {
-  await mkdir(DIR, { recursive: true });
 }
 
 export async function issueGoogleLinkToken(input: {
@@ -38,7 +29,6 @@ export async function issueGoogleLinkToken(input: {
   googleId: string;
   next?: string | null;
 }) {
-  await ensureDir();
   const raw = randomBytes(32).toString("hex");
   const now = Date.now();
   const record = recordSchema.parse({
@@ -50,13 +40,13 @@ export async function issueGoogleLinkToken(input: {
     expiresAt: new Date(now + TTL_MS).toISOString(),
     usedAt: null,
   });
-  await writeFile(fileFor(hashToken(raw)), JSON.stringify(record, null, 2), "utf8");
+  await writeConfinedJson(DIR, hashToken(raw), JSON.stringify(record, null, 2), "hex64");
   return { raw, next: record.next };
 }
 
 export async function readGoogleLinkToken(raw: string) {
   try {
-    const record = recordSchema.parse(JSON.parse(await readFile(fileFor(hashToken(raw)), "utf8")));
+    const record = recordSchema.parse(JSON.parse(await readConfinedJson(DIR, hashToken(raw), "hex64")));
     if (record.usedAt) return null;
     if (Date.parse(record.expiresAt) <= Date.now()) return null;
     return record;
@@ -68,6 +58,6 @@ export async function readGoogleLinkToken(raw: string) {
 export async function consumeGoogleLinkToken(raw: string) {
   const record = await readGoogleLinkToken(raw);
   if (!record) return null;
-  await rm(fileFor(hashToken(raw)), { force: true });
+  await removeConfinedJson(DIR, hashToken(raw), "hex64");
   return record;
 }

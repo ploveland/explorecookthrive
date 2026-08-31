@@ -6,8 +6,12 @@ import { recipeFromJsonLd, recipeFromMicrodata } from "./parse-jsonld";
 import { ExtractError, extractRequestSchema, type ExtractedRecipe, type RecipeDraft } from "./schema";
 import { readUrlCache, writeUrlCache } from "./url-cache";
 
-export async function extractRecipe(input: unknown): Promise<RecipeDraft> {
+export async function extractRecipe(
+  input: unknown,
+  owner: { guestId?: string | null; userId?: string | null } = {},
+): Promise<RecipeDraft> {
   const request = extractRequestSchema.parse(input);
+  const draftOptions = { guestId: owner.guestId ?? null, userId: owner.userId ?? null };
 
   if (request.mode === "paste") {
     const recipe = parsePastedRecipe(request.text);
@@ -17,13 +21,13 @@ export async function extractRecipe(input: unknown): Promise<RecipeDraft> {
       confidence: recipe.confidence,
       ingredientCount: recipe.ingredients.length,
     });
-    return saveDraft(recipe);
+    return saveDraft(recipe, draftOptions);
   }
 
   const cached = await readUrlCache(request.url);
   if (cached) {
     log.info("recipe.extract", { mode: "url", extractor: "cache", sourceHost: cached.sourceSite });
-    return saveDraft(cached);
+    return saveDraft(cached, draftOptions);
   }
 
   const { finalUrl, html } = await fetchRecipeHtml(request.url);
@@ -45,7 +49,7 @@ export async function extractRecipe(input: unknown): Promise<RecipeDraft> {
     confidence: recipe.confidence,
     sourceHost: recipe.sourceSite,
   });
-  return saveDraft(recipe);
+  return saveDraft(recipe, draftOptions);
 }
 
 export type { ExtractedRecipe };

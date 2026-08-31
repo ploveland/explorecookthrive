@@ -41,7 +41,7 @@ describe("users", () => {
   it("reads kitchens saved before Google login existed", async () => {
     const dir = path.join(process.cwd(), ".data", "users");
     await mkdir(dir, { recursive: true });
-    const id = "legacy-user";
+    const id = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
     await writeFile(
       path.join(dir, `${id}.json`),
       JSON.stringify({

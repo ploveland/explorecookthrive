@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { toggleFavorite } from "@/server/accounts/favorites";
 import { currentAccount } from "@/server/accounts/session";
+import { publicSlugSchema } from "@/server/fs/ids";
 
 const bodySchema = z.object({
-  slug: z.string().min(1),
+  slug: publicSlugSchema,
 });
 
 export async function POST(request: Request) {

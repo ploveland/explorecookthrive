@@ -2,12 +2,13 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z, ZodError } from "zod";
 import { currentAccount } from "@/server/accounts/session";
+import { publicSlugSchema } from "@/server/fs/ids";
 import { RatingError, getRatingSummary, upsertRating } from "@/server/community/store";
 import { getVisibleBySlug } from "@/server/library/store";
 import { log } from "@/server/log";
 
 const bodySchema = z.object({
-  slug: z.string().min(1),
+  slug: publicSlugSchema,
   taste: z.number().int().min(1).max(5),
   texture: z.number().int().min(1).max(5),
   similarity: z.number().int().min(1).max(5),

@@ -1,6 +1,3 @@
-import { randomUUID } from "node:crypto";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { saveDraft, getDraft } from "../drafts/store";
 import { env } from "../env";
 import { log } from "../log";
@@ -8,6 +5,15 @@ import { compareRecipeNutrition, type NutritionIngredientInput } from "../nutrit
 import { inputFromExtractedRecipe } from "./from-recipe";
 import { sameKitchen } from "./versions";
 import { hasLiveLlm, runConversion } from "./run";
+import { kitchenOwns } from "../accounts/kitchen-access";
+import {
+  InvalidStorageIdError,
+  dataDir,
+  listConfinedJsonIds,
+  newStorageId,
+  readConfinedJson,
+  writeConfinedJson,
+} from "../fs/safe-path";
 import {
   ACTIVE_JOB_STAGES,
   PROMPT_VERSION,
@@ -19,7 +25,7 @@ import {
   type TastePreferenceId,
 } from "./schema";
 
-const DIR = path.join(process.cwd(), ".data", "jobs");
+const DIR = dataDir("jobs");
 const running = new Set<string>();
 
 function stageDelayMs() {
@@ -29,31 +35,32 @@ function stageDelayMs() {
   return Number.isFinite(value) ? Math.max(0, value) : 350;
 }
 
-async function ensureDir() {
-  await mkdir(DIR, { recursive: true });
-}
-
-function fileFor(id: string) {
-  return path.join(DIR, `${id}.json`);
-}
-
 async function writeJob(job: ConversionJob) {
-  await ensureDir();
   const next = conversionJobSchema.parse({
     ...job,
     updatedAt: new Date().toISOString(),
   });
-  await writeFile(fileFor(next.id), JSON.stringify(next, null, 2), "utf8");
+  await writeConfinedJson(DIR, next.id, JSON.stringify(next, null, 2));
   return next;
 }
 
 export async function getJob(id: string): Promise<ConversionJob | null> {
   try {
-    const raw = await readFile(fileFor(id), "utf8");
+    const raw = await readConfinedJson(DIR, id);
     return conversionJobSchema.parse(JSON.parse(raw));
-  } catch {
+  } catch (error) {
+    if (error instanceof InvalidStorageIdError) throw error;
     return null;
   }
+}
+
+export async function getAccessibleJob(
+  id: string,
+  actor: { userId?: string | null; guestId?: string | null },
+): Promise<ConversionJob | null> {
+  const job = await getJob(id);
+  if (!job || !kitchenOwns(job, actor)) return null;
+  return job;
 }
 
 export class JobError extends Error {
@@ -67,20 +74,19 @@ export class JobError extends Error {
 }
 
 export async function listJobs(): Promise<ConversionJob[]> {
-  try {
-    const names = await readdir(DIR);
-    const jobs = await Promise.all(
-      names
-        .filter((name) => name.endsWith(".json"))
-        .map(async (name) => {
-          const raw = await readFile(path.join(DIR, name), "utf8");
-          return conversionJobSchema.parse(JSON.parse(raw));
-        }),
-    );
-    return jobs.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  } catch {
-    return [];
-  }
+  const ids = await listConfinedJsonIds(DIR);
+  const jobs = await Promise.all(
+    ids.map(async (id) => {
+      try {
+        return conversionJobSchema.parse(JSON.parse(await readConfinedJson(DIR, id)));
+      } catch {
+        return null;
+      }
+    }),
+  );
+  return jobs
+    .filter((job): job is ConversionJob => Boolean(job))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 export async function listJobsForAccount(input: {
@@ -112,15 +118,24 @@ export async function createJob(input: {
   guestId?: string | null;
   userId?: string | null;
 }): Promise<ConversionJob> {
-  const draft = await getDraft(input.draftId);
+  let draft;
+  try {
+    draft = await getDraft(input.draftId);
+  } catch (error) {
+    if (error instanceof InvalidStorageIdError) throw error;
+    throw error;
+  }
   if (!draft) {
+    throw new JobError("draft_not_found", "We could not find that recipe draft.");
+  }
+  if (!kitchenOwns(draft, { userId: input.userId, guestId: input.guestId })) {
     throw new JobError("draft_not_found", "We could not find that recipe draft.");
   }
 
   const now = new Date().toISOString();
   const live = hasLiveLlm();
   return writeJob({
-    id: randomUUID(),
+    id: newStorageId(),
     draftId: draft.id,
     recipe: draft.recipe,
     goals: input.goals,
@@ -150,7 +165,11 @@ export async function ensureDraftFromJob(jobId: string) {
   if (!job) {
     throw new JobError("job_not_found", "We could not find that conversion.");
   }
-  const draft = await saveDraft(job.recipe, job.draftId);
+  const draft = await saveDraft(job.recipe, {
+    id: job.draftId,
+    guestId: job.guestId,
+    userId: job.userId,
+  });
   return { job, draft };
 }
 

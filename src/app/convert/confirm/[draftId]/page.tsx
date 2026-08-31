@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { ConfirmRecipeForm } from "@/components/confirm-recipe-form";
-import { getDraft } from "@/server/drafts/store";
+import { currentAccount } from "@/server/accounts/session";
+import { getAccessibleDraft } from "@/server/drafts/store";
+import { notFoundOnInvalidId } from "@/server/http/not-found-on-invalid-id";
 
 export default async function ConfirmRecipePage({
   params,
@@ -8,7 +10,8 @@ export default async function ConfirmRecipePage({
   params: Promise<{ draftId: string }>;
 }) {
   const { draftId } = await params;
-  const draft = await getDraft(draftId);
+  const account = await currentAccount();
+  const draft = await getAccessibleDraft(draftId, account).catch(notFoundOnInvalidId);
   if (!draft) notFound();
 
   return (

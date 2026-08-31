@@ -2,11 +2,12 @@ import { notFound, redirect } from "next/navigation";
 import { ConvertResult } from "@/components/convert-result";
 import { RecipeCover } from "@/components/recipe-cover";
 import { currentAccount } from "@/server/accounts/session";
-import { getJob, listRelatedJobs } from "@/server/convert/jobs";
+import { getAccessibleJob, listRelatedJobs } from "@/server/convert/jobs";
 import { completeVersions, versionNumberFor } from "@/server/convert/versions";
 import { recipeIsShareable, recipeShareUrl } from "@/server/library/share";
 import { getPublishedByJobId } from "@/server/library/store";
 import { coverInputFromJob } from "@/lib/recipe-cover";
+import { notFoundOnInvalidId } from "@/server/http/not-found-on-invalid-id";
 
 export const dynamic = "force-dynamic";
 
@@ -16,14 +17,14 @@ export default async function ConvertResultPage({
   params: Promise<{ jobId: string }>;
 }) {
   const { jobId } = await params;
-  const job = await getJob(jobId);
+  const account = await currentAccount();
+  const job = await getAccessibleJob(jobId, account).catch(notFoundOnInvalidId);
   if (!job) notFound();
   if (job.status !== "complete" || !job.output) {
-    redirect(`/convert/working/${jobId}`);
+    redirect(`/convert/working/${job.id}`);
   }
 
   const published = await getPublishedByJobId(job.id);
-  const account = await currentAccount();
   const related = await listRelatedJobs(job);
   const siblings = completeVersions(related);
   const versionNumber = versionNumberFor(related, job.id);

@@ -1,7 +1,6 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { env } from "../env";
 import { log } from "../log";
+import { dataDir, writeConfinedJson } from "../fs/safe-path";
 
 export type OutgoingMail = {
   to: string;
@@ -10,7 +9,7 @@ export type OutgoingMail = {
   html: string;
 };
 
-const OUTBOX_DIR = path.join(process.cwd(), ".data", "mail-outbox");
+const OUTBOX_DIR = dataDir("mail-outbox");
 
 export function mailerConfigured() {
   return Boolean(env("RESEND_API_KEY"));
@@ -50,9 +49,7 @@ export async function sendMail(message: OutgoingMail): Promise<"sent" | "outbox"
     throw new Error("mail_unconfigured");
   }
 
-  await mkdir(OUTBOX_DIR, { recursive: true });
-  const file = path.join(OUTBOX_DIR, `${Date.now()}.json`);
-  await writeFile(file, JSON.stringify(message, null, 2), "utf8");
+  await writeConfinedJson(OUTBOX_DIR, String(Date.now()), JSON.stringify(message, null, 2), "numeric");
   log.info("mail.outbox", { provider: "outbox" });
   return "outbox";
 }

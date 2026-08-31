@@ -2,6 +2,7 @@ import { z } from "zod";
 import { conversionOutputSchema } from "../ai/types";
 import { nutritionComparisonSchema } from "../nutrition/schema";
 import { extractedRecipeSchema } from "../recipes/schema";
+import { storageUuidSchema } from "../fs/ids";
 
 export const nutritionGoals = [
   "healthier_overall",
@@ -116,7 +117,7 @@ export const DIETARY_COPY: Record<DietaryRequirementId, { label: string; detail:
 };
 
 export const convertRequestSchema = z.object({
-  draftId: z.string().min(1),
+  draftId: storageUuidSchema,
   goals: z.array(nutritionGoalSchema).min(1, "Pick at least one nutrition goal."),
   preference: tastePreferenceSchema.default("balanced"),
   dietary: z.array(dietaryRequirementSchema).default([]),

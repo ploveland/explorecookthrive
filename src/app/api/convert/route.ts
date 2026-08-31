@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { gateConversion } from "@/server/accounts/session";
+import { hasKitchenSession } from "@/server/accounts/kitchen-access";
 import { JobError, createJob, startJob } from "@/server/convert/jobs";
 import { convertRequestSchema } from "@/server/convert/schema";
+import { jsonErrorFromUnknown, sessionRequiredResponse } from "@/server/http/api-error";
 import { log } from "@/server/log";
 
 export async function POST(request: Request) {
   try {
     const gated = await gateConversion();
+    if (!hasKitchenSession(gated)) {
+      return sessionRequiredResponse();
+    }
     if (!gated.gate.ok) {
       log.warn("convert.rate_limited", {
         code: gated.gate.code,
@@ -46,12 +51,15 @@ export async function POST(request: Request) {
     if (error instanceof JobError && error.code === "draft_not_found") {
       return NextResponse.json({ code: error.code, message: error.message }, { status: 404 });
     }
-    return NextResponse.json(
-      {
-        code: "convert_failed",
-        message: "We could not start that conversion. Try again in a moment.",
-      },
-      { status: 500 },
+    return (
+      jsonErrorFromUnknown(error) ??
+      NextResponse.json(
+        {
+          code: "convert_failed",
+          message: "We could not start that conversion. Try again in a moment.",
+        },
+        { status: 500 },
+      )
     );
   }
 }

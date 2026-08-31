@@ -1,25 +1,16 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { z } from "zod";
+import { dataDir, parsePublicSlug, readConfinedJson, writeConfinedJson } from "../fs/safe-path";
 
-const DIR = path.join(process.cwd(), ".data", "favorites");
+const DIR = dataDir("favorites");
 
 const favoriteListSchema = z.object({
   userId: z.string(),
   slugs: z.array(z.string()),
 });
 
-async function ensureDir() {
-  await mkdir(DIR, { recursive: true });
-}
-
-function fileFor(userId: string) {
-  return path.join(DIR, `${userId}.json`);
-}
-
 async function readList(userId: string): Promise<string[]> {
   try {
-    const raw = await readFile(fileFor(userId), "utf8");
+    const raw = await readConfinedJson(DIR, userId);
     return favoriteListSchema.parse(JSON.parse(raw)).slugs;
   } catch {
     return [];
@@ -27,11 +18,10 @@ async function readList(userId: string): Promise<string[]> {
 }
 
 async function writeList(userId: string, slugs: string[]) {
-  await ensureDir();
-  await writeFile(
-    fileFor(userId),
+  await writeConfinedJson(
+    DIR,
+    userId,
     JSON.stringify({ userId, slugs }, null, 2),
-    "utf8",
   );
   return slugs;
 }
@@ -46,14 +36,15 @@ export async function isFavorite(userId: string, slug: string): Promise<boolean>
 }
 
 export async function toggleFavorite(userId: string, slug: string): Promise<{ favorited: boolean }> {
+  const safeSlug = parsePublicSlug(slug);
   const slugs = await readList(userId);
-  if (slugs.includes(slug)) {
+  if (slugs.includes(safeSlug)) {
     await writeList(
       userId,
-      slugs.filter((item) => item !== slug),
+      slugs.filter((item) => item !== safeSlug),
     );
     return { favorited: false };
   }
-  await writeList(userId, [slug, ...slugs]);
+  await writeList(userId, [safeSlug, ...slugs]);
   return { favorited: true };
 }

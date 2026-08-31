@@ -9,7 +9,7 @@ afterEach(async () => {
 
 describe("rating write budget", () => {
   it("allows a handful of writes then stops for the hour", async () => {
-    const userId = "cook-1";
+    const userId = "11111111-1111-4111-8111-111111111111";
     const start = Date.now();
     for (let i = 0; i < RATING_WRITES_PER_HOUR; i += 1) {
       expect(await canWriteRating(userId, start)).toBe(true);

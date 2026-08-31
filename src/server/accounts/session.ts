@@ -2,11 +2,19 @@ import { cookies } from "next/headers";
 import { auth } from "@/auth";
 import { assignJobOwner, listJobs } from "@/server/convert/jobs";
 import { GUEST_COOKIE } from "./constants";
+import { parseStorageId } from "../fs/safe-path";
+import { assignDraftOwner } from "../drafts/store";
 import { conversionGate, isSameUtcDay, remainingConversions } from "./policy";
 
 export async function readGuestId(): Promise<string | null> {
   const jar = await cookies();
-  return jar.get(GUEST_COOKIE)?.value ?? null;
+  const raw = jar.get(GUEST_COOKIE)?.value ?? null;
+  if (!raw) return null;
+  try {
+    return parseStorageId(raw, "uuid");
+  } catch {
+    return null;
+  }
 }
 
 export async function currentAccount() {
@@ -15,6 +23,7 @@ export async function currentAccount() {
   const userId = session?.user?.id ?? null;
   if (userId && guestId) {
     await assignJobOwner({ guestId, userId });
+    await assignDraftOwner({ guestId, userId });
   }
   return {
     user: session?.user ?? null,

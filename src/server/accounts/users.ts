@@ -1,11 +1,9 @@
-import { randomUUID } from "node:crypto";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { z } from "zod";
 import { PASSWORD_MIN_LENGTH } from "./constants";
 import { hashPassword, verifyPassword } from "./password";
+import { dataDir, newStorageId, readConfinedJson, readConfinedJsonRecords, writeConfinedJson } from "../fs/safe-path";
 
-const DIR = path.join(process.cwd(), ".data", "users");
+const DIR = dataDir("users");
 
 export const userRecordSchema = z.object({
   id: z.string(),
@@ -35,38 +33,17 @@ export class AccountError extends Error {
   }
 }
 
-async function ensureDir() {
-  await mkdir(DIR, { recursive: true });
-}
-
-function fileFor(id: string) {
-  return path.join(DIR, `${id}.json`);
+async function readAll(): Promise<UserRecord[]> {
+  return readConfinedJsonRecords(DIR, (raw) => userRecordSchema.parse(raw));
 }
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
 
-async function readAll(): Promise<UserRecord[]> {
-  try {
-    const names = await readdir(DIR);
-    const users = await Promise.all(
-      names
-        .filter((name) => name.endsWith(".json"))
-        .map(async (name) => {
-          const raw = await readFile(path.join(DIR, name), "utf8");
-          return userRecordSchema.parse(JSON.parse(raw));
-        }),
-    );
-    return users;
-  } catch {
-    return [];
-  }
-}
-
 export async function getUserById(id: string): Promise<UserRecord | null> {
   try {
-    const raw = await readFile(fileFor(id), "utf8");
+    const raw = await readConfinedJson(DIR, id);
     return userRecordSchema.parse(JSON.parse(raw));
   } catch {
     return null;
@@ -108,7 +85,7 @@ export async function createUser(input: {
   }
 
   const user: UserRecord = {
-    id: randomUUID(),
+    id: newStorageId(),
     email,
     name,
     passwordHash: await hashPassword(input.password),
@@ -136,7 +113,7 @@ export async function createGoogleUser(input: {
     throw new AccountError("email_taken", "That email already has a kitchen.");
   }
   const user: UserRecord = {
-    id: randomUUID(),
+    id: newStorageId(),
     email,
     name,
     passwordHash: null,
@@ -173,8 +150,7 @@ export async function verifyUser(email: string, password: string): Promise<Publi
 }
 
 async function writeUser(user: UserRecord) {
-  await ensureDir();
-  await writeFile(fileFor(user.id), JSON.stringify(user, null, 2), "utf8");
+  await writeConfinedJson(DIR, user.id, JSON.stringify(user, null, 2));
 }
 
 export async function updatePassword(userId: string, password: string): Promise<PublicUser> {

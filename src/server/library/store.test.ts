@@ -3,6 +3,8 @@ import { rm } from "node:fs/promises";
 import path from "node:path";
 import { saveDraft } from "../drafts/store";
 import { createJob, processJob } from "../convert/jobs";
+
+const GUEST = "11111111-1111-4111-8111-111111111111";
 import { assignLibraryTags } from "./tags";
 import { getPublishedByJobId, listPublished, publishFromJob, setRecipeVisibility, LibraryError } from "./store";
 
@@ -105,12 +107,13 @@ describe("library publish", () => {
   it("publishes a completed job once and lists it for search", async () => {
     process.env.CONVERT_STAGE_DELAY_MS = "0";
     delete process.env.OPENAI_API_KEY;
-    const draft = await saveDraft(sampleRecipe);
+    const draft = await saveDraft(sampleRecipe, { guestId: GUEST });
     const job = await createJob({
       draftId: draft.id,
       goals: ["higher_protein", "more_fiber"],
       preference: "balanced",
       dietary: [],
+      guestId: GUEST,
     });
     const done = await processJob(job.id);
     expect(done?.status).toBe("complete");
@@ -142,12 +145,13 @@ describe("library publish", () => {
   it("keeps unlisted recipes off the public library list", async () => {
     process.env.CONVERT_STAGE_DELAY_MS = "0";
     delete process.env.OPENAI_API_KEY;
-    const draft = await saveDraft(sampleRecipe);
+    const draft = await saveDraft(sampleRecipe, { guestId: GUEST });
     const job = await createJob({
       draftId: draft.id,
       goals: ["healthier_overall"],
       preference: "balanced",
       dietary: [],
+      guestId: GUEST,
     });
     const done = await processJob(job.id);
     const published = await publishFromJob(done!, { ownerId: "cook-1", ownerName: "Sam" });
@@ -158,12 +162,13 @@ describe("library publish", () => {
 
   it("refuses an unfinished job", async () => {
     process.env.CONVERT_STAGE_DELAY_MS = "0";
-    const draft = await saveDraft(sampleRecipe);
+    const draft = await saveDraft(sampleRecipe, { guestId: GUEST });
     const job = await createJob({
       draftId: draft.id,
       goals: ["healthier_overall"],
       preference: "balanced",
       dietary: [],
+      guestId: GUEST,
     });
     await expect(publishFromJob(job)).rejects.toBeInstanceOf(LibraryError);
   });

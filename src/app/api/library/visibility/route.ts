@@ -2,10 +2,11 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { currentAccount } from "@/server/accounts/session";
+import { publicSlugSchema } from "@/server/fs/ids";
 import { setRecipeVisibility } from "@/server/library/store";
 
 const bodySchema = z.object({
-  slug: z.string().min(1),
+  slug: publicSlugSchema,
   visibility: z.enum(["public", "unlisted", "private"]),
 });
 

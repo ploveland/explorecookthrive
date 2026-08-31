@@ -2,12 +2,14 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z, ZodError } from "zod";
 import { currentAccount } from "@/server/accounts/session";
-import { getJob } from "@/server/convert/jobs";
+import { getAccessibleJob } from "@/server/convert/jobs";
+import { storageUuidSchema } from "@/server/fs/ids";
+import { jsonErrorFromUnknown } from "@/server/http/api-error";
 import { LibraryError, getPublishedByJobId, publishFromJob } from "@/server/library/store";
 import { log } from "@/server/log";
 
 const bodySchema = z.object({
-  jobId: z.string().min(1),
+  jobId: storageUuidSchema,
 });
 
 export async function POST(request: Request) {
@@ -23,7 +25,7 @@ export async function POST(request: Request) {
       );
     }
     const body = bodySchema.parse(await request.json());
-    const job = await getJob(body.jobId);
+    const job = await getAccessibleJob(body.jobId, account);
     if (!job) {
       return NextResponse.json(
         { code: "job_not_found", message: "We could not find that conversion." },
@@ -62,9 +64,12 @@ export async function POST(request: Request) {
     if (error instanceof LibraryError) {
       return NextResponse.json({ code: error.code, message: error.message }, { status: 409 });
     }
-    return NextResponse.json(
-      { code: "publish_failed", message: "We could not publish that recipe. Try again in a moment." },
-      { status: 500 },
+    return (
+      jsonErrorFromUnknown(error) ??
+      NextResponse.json(
+        { code: "publish_failed", message: "We could not publish that recipe. Try again in a moment." },
+        { status: 500 },
+      )
     );
   }
 }

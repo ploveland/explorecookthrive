@@ -3,6 +3,9 @@ import { rm } from "node:fs/promises";
 import path from "node:path";
 import { saveDraft } from "../drafts/store";
 import { createJob, ensureDraftFromJob, getJob, listRelatedJobs, processJob, JobError } from "./jobs";
+import { newStorageId } from "../fs/safe-path";
+
+const GUEST = "11111111-1111-4111-8111-111111111111";
 import { versionNumberFor } from "./versions";
 
 const sampleRecipe = {
@@ -63,27 +66,29 @@ describe("conversion jobs", () => {
   it("refuses a missing draft", async () => {
     await expect(
       createJob({
-        draftId: "missing",
+        draftId: newStorageId(),
         goals: ["healthier_overall"],
         preference: "balanced",
         dietary: [],
+        guestId: GUEST,
       }),
     ).rejects.toBeInstanceOf(JobError);
   });
 
   it("refuses to restore a conversion that is not there", async () => {
-    await expect(ensureDraftFromJob("missing")).rejects.toMatchObject({ code: "job_not_found" });
+    await expect(ensureDraftFromJob(newStorageId())).rejects.toMatchObject({ code: "job_not_found" });
   });
 
   it("runs a mock conversion through to a private result", async () => {
     process.env.CONVERT_STAGE_DELAY_MS = "0";
     delete process.env.OPENAI_API_KEY;
-    const draft = await saveDraft(sampleRecipe);
+    const draft = await saveDraft(sampleRecipe, { guestId: GUEST });
     const job = await createJob({
       draftId: draft.id,
       goals: ["higher_protein", "more_fiber"],
       preference: "balanced",
       dietary: [],
+      guestId: GUEST,
     });
     expect(job.status).toBe("queued");
     expect(job.provider).toBe("mock");
@@ -106,12 +111,13 @@ describe("conversion jobs", () => {
   it("restores a missing draft so the cook can thrive again with new goals", async () => {
     process.env.CONVERT_STAGE_DELAY_MS = "0";
     delete process.env.OPENAI_API_KEY;
-    const draft = await saveDraft(sampleRecipe);
+    const draft = await saveDraft(sampleRecipe, { guestId: GUEST });
     const first = await createJob({
       draftId: draft.id,
       goals: ["higher_protein", "more_fiber"],
       preference: "balanced",
       dietary: [],
+      guestId: GUEST,
     });
     await processJob(first.id);
     await rm(path.join(process.cwd(), ".data", "drafts", `${draft.id}.json`), { force: true });
@@ -126,6 +132,7 @@ describe("conversion jobs", () => {
       goals: ["lower_calories"],
       preference: "preserve",
       dietary: ["gluten_free"],
+      guestId: GUEST,
     });
     expect(second.id).not.toBe(first.id);
     expect(second.goals).toEqual(["lower_calories"]);

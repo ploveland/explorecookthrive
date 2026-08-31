@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { ConvertProgress } from "@/components/convert-progress";
-import { getJob } from "@/server/convert/jobs";
+import { currentAccount } from "@/server/accounts/session";
+import { getAccessibleJob } from "@/server/convert/jobs";
+import { notFoundOnInvalidId } from "@/server/http/not-found-on-invalid-id";
 
 export default async function ConvertWorkingPage({
   params,
@@ -8,7 +10,8 @@ export default async function ConvertWorkingPage({
   params: Promise<{ jobId: string }>;
 }) {
   const { jobId } = await params;
-  const job = await getJob(jobId);
+  const account = await currentAccount();
+  const job = await getAccessibleJob(jobId, account).catch(notFoundOnInvalidId);
   if (!job) notFound();
 
   return (

@@ -1,11 +1,10 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { env } from "../env";
 import { CATALOG, type CatalogFood, findCatalogFood } from "./catalog";
 import { emptyNutrients, type NutrientTotals } from "./schema";
+import { dataDir, readConfinedJson, sha256Hex, writeConfinedJson } from "../fs/safe-path";
 
 const FDC_SEARCH = "https://api.nal.usda.gov/fdc/v1/foods/search";
-const CACHE_DIR = path.join(process.cwd(), ".data", "fdc");
+const CACHE_DIR = dataDir("fdc");
 
 const NUTRIENT_IDS: Record<number, keyof NutrientTotals> = {
   1008: "calories",
@@ -46,7 +45,7 @@ function nutrientsFromFdc(food: FdcSearchFood): NutrientTotals {
 
 async function readCache(key: string): Promise<CatalogFood | null> {
   try {
-    const raw = await readFile(path.join(CACHE_DIR, `${key}.json`), "utf8");
+    const raw = await readConfinedJson(CACHE_DIR, key, "hex64");
     return JSON.parse(raw) as CatalogFood;
   } catch {
     return null;
@@ -54,12 +53,11 @@ async function readCache(key: string): Promise<CatalogFood | null> {
 }
 
 async function writeCache(key: string, food: CatalogFood) {
-  await mkdir(CACHE_DIR, { recursive: true });
-  await writeFile(path.join(CACHE_DIR, `${key}.json`), JSON.stringify(food), "utf8");
+  await writeConfinedJson(CACHE_DIR, key, JSON.stringify(food), "hex64");
 }
 
 function cacheKey(query: string) {
-  return query.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "query";
+  return sha256Hex(`fdc:${query.toLowerCase()}`);
 }
 
 export async function resolveFood(name: string): Promise<CatalogFood | null> {

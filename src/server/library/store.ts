@@ -1,12 +1,17 @@
-import { randomUUID } from "node:crypto";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
 import type { ConversionJob } from "../convert/schema";
+import {
+  dataDir,
+  newStorageId,
+  parsePublicSlug,
+  readConfinedJson,
+  readConfinedJsonRecords,
+  writeConfinedJson,
+} from "../fs/safe-path";
 import { assignLibraryTags } from "./tags";
 import { matchesNutritionFilters, type NutritionFilters } from "./nutrition-filter";
 import { publishedRecipeSchema, type PublishedRecipe } from "./schema";
 
-const DIR = path.join(process.cwd(), ".data", "library");
+const DIR = dataDir("library");
 
 export class LibraryError extends Error {
   constructor(
@@ -16,14 +21,6 @@ export class LibraryError extends Error {
     super(message);
     this.name = "LibraryError";
   }
-}
-
-async function ensureDir() {
-  await mkdir(DIR, { recursive: true });
-}
-
-function fileFor(id: string) {
-  return path.join(DIR, `${id}.json`);
 }
 
 function slugify(title: string, id: string) {
@@ -37,25 +34,13 @@ function slugify(title: string, id: string) {
 }
 
 async function readAll(): Promise<PublishedRecipe[]> {
-  try {
-    const names = await readdir(DIR);
-    const recipes = await Promise.all(
-      names
-        .filter((name) => name.endsWith(".json"))
-        .map(async (name) => {
-          const raw = await readFile(path.join(DIR, name), "utf8");
-          return publishedRecipeSchema.parse(JSON.parse(raw));
-        }),
-    );
-    return recipes.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
-  } catch {
-    return [];
-  }
+  const recipes = await readConfinedJsonRecords(DIR, (raw) => publishedRecipeSchema.parse(raw));
+  return recipes.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
 }
 
 export async function getPublishedById(id: string): Promise<PublishedRecipe | null> {
   try {
-    const raw = await readFile(fileFor(id), "utf8");
+    const raw = await readConfinedJson(DIR, id);
     return publishedRecipeSchema.parse(JSON.parse(raw));
   } catch {
     return null;
@@ -63,8 +48,13 @@ export async function getPublishedById(id: string): Promise<PublishedRecipe | nu
 }
 
 export async function getPublishedBySlug(slug: string): Promise<PublishedRecipe | null> {
-  const recipes = await readAll();
-  return recipes.find((recipe) => recipe.slug === slug) ?? null;
+  try {
+    const safe = parsePublicSlug(slug);
+    const recipes = await readAll();
+    return recipes.find((recipe) => recipe.slug === safe) ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function getPublishedByJobId(jobId: string): Promise<PublishedRecipe | null> {
@@ -126,7 +116,7 @@ export async function setRecipeVisibility(
   const recipe = await getPublishedBySlug(slug);
   if (!recipe || recipe.ownerId !== ownerId) return null;
   const next = publishedRecipeSchema.parse({ ...recipe, visibility });
-  await writeFile(fileFor(next.id), JSON.stringify(next, null, 2), "utf8");
+  await writeConfinedJson(DIR, next.id, JSON.stringify(next, null, 2));
   return next;
 }
 
@@ -147,7 +137,7 @@ export async function publishFromJob(
   if (existing) return existing;
 
   const thrive = job.output.thriveVersion;
-  const id = randomUUID();
+  const id = newStorageId();
   const recipe = publishedRecipeSchema.parse({
     id,
     slug: slugify(thrive.title, id),
@@ -191,7 +181,6 @@ export async function publishFromJob(
     publishedAt: new Date().toISOString(),
   });
 
-  await ensureDir();
-  await writeFile(fileFor(recipe.id), JSON.stringify(recipe, null, 2), "utf8");
+  await writeConfinedJson(DIR, recipe.id, JSON.stringify(recipe, null, 2));
   return recipe;
 }

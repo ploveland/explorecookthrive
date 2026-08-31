@@ -76,7 +76,7 @@ describe("Google kitchen login", () => {
   });
 
   it("attaches Google to a passwordless kitchen that is missing googleId", async () => {
-    const id = "orphan-kitchen";
+    const id = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
     const dir = path.join(process.cwd(), ".data", "users");
     await mkdir(dir, { recursive: true });
     await writeFile(

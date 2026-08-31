@@ -1,13 +1,23 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
+import { currentAccount } from "@/server/accounts/session";
+import { hasKitchenSession } from "@/server/accounts/kitchen-access";
+import { sessionRequiredResponse } from "@/server/http/api-error";
 import { log } from "@/server/log";
 import { extractRecipe } from "@/server/recipes/extract";
 import { ExtractError } from "@/server/recipes/schema";
 
 export async function POST(request: Request) {
   try {
+    const account = await currentAccount();
+    if (!hasKitchenSession(account)) {
+      return sessionRequiredResponse();
+    }
     const body = await request.json();
-    const draft = await extractRecipe(body);
+    const draft = await extractRecipe(body, {
+      guestId: account.guestId,
+      userId: account.userId,
+    });
     return NextResponse.json({ draftId: draft.id, recipe: draft.recipe });
   } catch (error) {
     if (error instanceof ZodError) {

@@ -2,8 +2,12 @@ import { afterEach, describe, expect, it } from "vitest";
 import { rm } from "node:fs/promises";
 import path from "node:path";
 import { createUser } from "../accounts/users";
-import { RatingError, getRatingSummary, getUserRating, listPublicReviews, upsertRating } from "./store";
+import { getRatingSummary, getUserRating, listPublicReviews, upsertRating } from "./store";
+import { InvalidStorageIdError } from "../fs/safe-path";
 
+const COOK_1 = "11111111-1111-4111-8111-111111111111";
+const COOK_QUIET = "22222222-2222-4222-8222-222222222222";
+const OWNER = "33333333-3333-4333-8333-333333333333";
 const scores = {
   taste: 5,
   texture: 4,
@@ -22,15 +26,15 @@ describe("community ratings store", () => {
   it("upserts one rating per cook and summarizes", async () => {
     await upsertRating({
       slug: "weeknight-chili",
-      userId: "cook-1",
-      ownerId: "owner",
+      userId: COOK_1,
+      ownerId: OWNER,
       visibility: "public",
       ...scores,
     });
     const updated = await upsertRating({
       slug: "weeknight-chili",
-      userId: "cook-1",
-      ownerId: "owner",
+      userId: COOK_1,
+      ownerId: OWNER,
       visibility: "public",
       taste: 4,
       texture: 5,
@@ -42,8 +46,20 @@ describe("community ratings store", () => {
     expect(updated.summary.count).toBe(1);
     expect(updated.rating.taste).toBe(4);
     expect(updated.rating.comment).toBe("Beans still belonged.");
-    expect((await getUserRating("weeknight-chili", "cook-1"))?.texture).toBe(5);
+    expect((await getUserRating("weeknight-chili", COOK_1))?.texture).toBe(5);
     expect((await getRatingSummary("weeknight-chili")).tasteAverage).toBe(4);
+  });
+
+  it("rejects a traversal slug instead of writing a ratings file outside the store", async () => {
+    await expect(
+      upsertRating({
+        slug: "../users",
+        userId: COOK_1,
+        ownerId: OWNER,
+        visibility: "public",
+        ...scores,
+      }),
+    ).rejects.toBeInstanceOf(InvalidStorageIdError);
   });
 
   it("lists named cook notes and hides empty comments", async () => {
@@ -55,15 +71,15 @@ describe("community ratings store", () => {
     await upsertRating({
       slug: "weeknight-chili",
       userId: cook.id,
-      ownerId: "owner",
+      ownerId: OWNER,
       visibility: "public",
       ...scores,
       comment: "Still tasted like a weeknight pot.",
     });
     await upsertRating({
       slug: "weeknight-chili",
-      userId: "quiet-cook",
-      ownerId: "owner",
+      userId: COOK_QUIET,
+      ownerId: OWNER,
       visibility: "public",
       ...scores,
       comment: "   ",
@@ -78,8 +94,8 @@ describe("community ratings store", () => {
     await expect(
       upsertRating({
         slug: "weeknight-chili",
-        userId: "owner",
-        ownerId: "owner",
+        userId: OWNER,
+        ownerId: OWNER,
         visibility: "public",
         ...scores,
       }),
@@ -88,8 +104,8 @@ describe("community ratings store", () => {
     await expect(
       upsertRating({
         slug: "secret-chili",
-        userId: "cook-1",
-        ownerId: "owner",
+        userId: COOK_1,
+        ownerId: OWNER,
         visibility: "private",
         ...scores,
       }),
@@ -98,8 +114,8 @@ describe("community ratings store", () => {
     await expect(
       upsertRating({
         slug: "unlisted-chili",
-        userId: "cook-1",
-        ownerId: "owner",
+        userId: COOK_1,
+        ownerId: OWNER,
         visibility: "unlisted",
         ...scores,
       }),
@@ -110,8 +126,8 @@ describe("community ratings store", () => {
     await expect(
       upsertRating({
         slug: "weeknight-chili",
-        userId: "cook-1",
-        ownerId: "owner",
+        userId: COOK_1,
+        ownerId: OWNER,
         visibility: "public",
         ...scores,
         comment: "Read more at https://spam.example/chili",

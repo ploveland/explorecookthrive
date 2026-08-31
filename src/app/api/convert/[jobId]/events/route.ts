@@ -1,4 +1,8 @@
-import { getJob, publicJob } from "@/server/convert/jobs";
+import { currentAccount } from "@/server/accounts/session";
+import { hasKitchenSession } from "@/server/accounts/kitchen-access";
+import { getAccessibleJob, publicJob } from "@/server/convert/jobs";
+import { InvalidStorageIdError } from "@/server/fs/safe-path";
+import { sessionRequiredResponse } from "@/server/http/api-error";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -6,6 +10,9 @@ export const dynamic = "force-dynamic";
 type RouteContext = { params: Promise<{ jobId: string }> };
 
 export async function GET(request: Request, context: RouteContext) {
+  const account = await currentAccount();
+  if (!hasKitchenSession(account)) return sessionRequiredResponse();
+
   const { jobId } = await context.params;
   const encoder = new TextEncoder();
 
@@ -16,13 +23,21 @@ export async function GET(request: Request, context: RouteContext) {
       };
 
       const tick = async () => {
-        const job = await getJob(jobId);
-        if (!job) {
-          send({ error: "not_found", message: "We could not find that conversion." });
-          return true;
+        try {
+          const job = await getAccessibleJob(jobId, account);
+          if (!job) {
+            send({ error: "not_found", message: "We could not find that conversion." });
+            return true;
+          }
+          send(publicJob(job));
+          return job.status === "complete" || job.status === "failed";
+        } catch (error) {
+          if (error instanceof InvalidStorageIdError) {
+            send({ error: "invalid_id", message: "That identifier is not valid." });
+            return true;
+          }
+          throw error;
         }
-        send(publicJob(job));
-        return job.status === "complete" || job.status === "failed";
       };
 
       try {

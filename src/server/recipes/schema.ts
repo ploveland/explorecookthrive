@@ -47,6 +47,8 @@ export type ExtractRequest = z.infer<typeof extractRequestSchema>;
 export const recipeDraftSchema = z.object({
   id: z.string(),
   recipe: extractedRecipeSchema,
+  guestId: z.string().nullable().default(null),
+  userId: z.string().nullable().default(null),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

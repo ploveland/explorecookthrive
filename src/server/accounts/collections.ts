@@ -1,9 +1,7 @@
-import { randomUUID } from "node:crypto";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { z } from "zod";
+import { dataDir, newStorageId, parsePublicSlug, parseStorageId, readConfinedJson, readConfinedJsonRecords, writeConfinedJson } from "../fs/safe-path";
 
-const DIR = path.join(process.cwd(), ".data", "collections");
+const DIR = dataDir("collections");
 
 export const collectionSchema = z.object({
   id: z.string(),
@@ -26,14 +24,6 @@ export class CollectionError extends Error {
   }
 }
 
-async function ensureDir() {
-  await mkdir(DIR, { recursive: true });
-}
-
-function fileFor(id: string) {
-  return path.join(DIR, `${id}.json`);
-}
-
 function slugify(name: string, id: string) {
   const base =
     name
@@ -45,20 +35,8 @@ function slugify(name: string, id: string) {
 }
 
 async function readAll(): Promise<KitchenCollection[]> {
-  try {
-    const names = await readdir(DIR);
-    const collections = await Promise.all(
-      names
-        .filter((name) => name.endsWith(".json"))
-        .map(async (name) => {
-          const raw = await readFile(path.join(DIR, name), "utf8");
-          return collectionSchema.parse(JSON.parse(raw));
-        }),
-    );
-    return collections.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  } catch {
-    return [];
-  }
+  const collections = await readConfinedJsonRecords(DIR, (raw) => collectionSchema.parse(raw));
+  return collections.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 export async function listCollections(userId: string): Promise<KitchenCollection[]> {
@@ -68,7 +46,7 @@ export async function listCollections(userId: string): Promise<KitchenCollection
 
 export async function getCollection(id: string): Promise<KitchenCollection | null> {
   try {
-    const raw = await readFile(fileFor(id), "utf8");
+    const raw = await readConfinedJson(DIR, id);
     return collectionSchema.parse(JSON.parse(raw));
   } catch {
     return null;
@@ -80,7 +58,19 @@ export async function getCollectionForUser(
   slug: string,
 ): Promise<KitchenCollection | null> {
   const collections = await listCollections(userId);
-  return collections.find((item) => item.slug === slug || item.id === slug) ?? null;
+  try {
+    const safeSlug = parsePublicSlug(slug);
+    const bySlug = collections.find((item) => item.slug === safeSlug);
+    if (bySlug) return bySlug;
+  } catch {
+    // not a public slug; it may still be a collection UUID
+  }
+  try {
+    const id = parseStorageId(slug, "uuid");
+    return collections.find((item) => item.id === id) ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function createCollection(userId: string, name: string): Promise<KitchenCollection> {
@@ -88,7 +78,7 @@ export async function createCollection(userId: string, name: string): Promise<Ki
   if (!trimmed) {
     throw new CollectionError("invalid_input", "Name the collection something you will recognize.");
   }
-  const id = randomUUID();
+  const id = newStorageId();
   const collection = collectionSchema.parse({
     id,
     userId,
@@ -97,8 +87,7 @@ export async function createCollection(userId: string, name: string): Promise<Ki
     recipeSlugs: [],
     createdAt: new Date().toISOString(),
   });
-  await ensureDir();
-  await writeFile(fileFor(collection.id), JSON.stringify(collection, null, 2), "utf8");
+  await writeConfinedJson(DIR, collection.id, JSON.stringify(collection, null, 2));
   return collection;
 }
 
@@ -111,9 +100,10 @@ export async function addToCollection(
   if (!collection || collection.userId !== userId) {
     throw new CollectionError("not_found", "We could not find that collection.");
   }
-  if (!collection.recipeSlugs.includes(recipeSlug)) {
-    collection.recipeSlugs = [recipeSlug, ...collection.recipeSlugs];
-    await writeFile(fileFor(collection.id), JSON.stringify(collection, null, 2), "utf8");
+  const slug = parsePublicSlug(recipeSlug);
+  if (!collection.recipeSlugs.includes(slug)) {
+    collection.recipeSlugs = [slug, ...collection.recipeSlugs];
+    await writeConfinedJson(DIR, collection.id, JSON.stringify(collection, null, 2));
   }
   return collection;
 }
@@ -127,7 +117,8 @@ export async function removeFromCollection(
   if (!collection || collection.userId !== userId) {
     throw new CollectionError("not_found", "We could not find that collection.");
   }
-  collection.recipeSlugs = collection.recipeSlugs.filter((slug) => slug !== recipeSlug);
-  await writeFile(fileFor(collection.id), JSON.stringify(collection, null, 2), "utf8");
+  const slug = parsePublicSlug(recipeSlug);
+  collection.recipeSlugs = collection.recipeSlugs.filter((item) => item !== slug);
+  await writeConfinedJson(DIR, collection.id, JSON.stringify(collection, null, 2));
   return collection;
 }

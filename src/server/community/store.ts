@@ -1,7 +1,6 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { z } from "zod";
 import { getUserById } from "@/server/accounts/users";
+import { dataDir, InvalidStorageIdError, parsePublicSlug, sha256Hex, readConfinedJson, writeConfinedJson } from "../fs/safe-path";
 import { COMMENT_REJECTED_MESSAGE, moderateComment } from "./moderate";
 import { canWriteRating, recordRatingWrite } from "./rate-limit";
 import {
@@ -12,7 +11,7 @@ import {
   type RatingSummary,
 } from "./policy";
 
-const DIR = path.join(process.cwd(), ".data", "ratings");
+const DIR = dataDir("ratings");
 
 const score = z.number().int().min(1).max(5);
 
@@ -48,31 +47,29 @@ export class RatingError extends Error {
   }
 }
 
-async function ensureDir() {
-  await mkdir(DIR, { recursive: true });
-}
-
-function fileFor(slug: string) {
-  return path.join(DIR, `${slug}.json`);
-}
-
-function cookDisplayName(name: string | undefined) {
-  const first = name?.trim().split(/\s+/)[0];
-  return first || "A cook";
+function ratingFileId(slug: string) {
+  return sha256Hex(`rating:${parsePublicSlug(slug)}`);
 }
 
 async function readFileRatings(slug: string): Promise<RecipeRating[]> {
+  const id = ratingFileId(slug);
   try {
-    const raw = await readFile(fileFor(slug), "utf8");
+    const raw = await readConfinedJson(DIR, id, "hex64");
     return fileSchema.parse(JSON.parse(raw)).ratings;
-  } catch {
+  } catch (error) {
+    if (error instanceof InvalidStorageIdError) throw error;
     return [];
   }
 }
 
 async function writeFileRatings(slug: string, ratings: RecipeRating[]) {
-  await ensureDir();
-  await writeFile(fileFor(slug), JSON.stringify({ slug, ratings }, null, 2), "utf8");
+  const safe = parsePublicSlug(slug);
+  await writeConfinedJson(DIR, ratingFileId(safe), JSON.stringify({ slug: safe, ratings }, null, 2), "hex64");
+}
+
+function cookDisplayName(name: string | undefined) {
+  const first = name?.trim().split(/\s+/)[0];
+  return first || "A cook";
 }
 
 export async function listRatings(slug: string): Promise<RecipeRating[]> {
