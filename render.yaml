@@ -30,9 +30,10 @@ services:
         value: "0"
       - key: CONVERT_AUTH_DAILY_LIMIT
         value: "0"
+      # generateValue cannot be combined with sync. Render keeps an existing
+      # AUTH_SECRET; it only generates one when the key is missing.
       - key: AUTH_SECRET
         generateValue: true
-        sync: false
       # Secrets stay on the service. Do not set empty values here — Blueprint
       # sync would wipe keys pasted in the Render dashboard.
       - key: OPENAI_API_KEY
